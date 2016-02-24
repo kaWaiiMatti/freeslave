@@ -1,24 +1,29 @@
+import hashlib
+
+
 class Md5HashTask:
-    def __init__(self, ip, port, target_hash, max_length = 6):
+    package_size = 4
+
+    def __init__(self, ip, port, target_hash, task_id, max_length = 6):
         self.target_hash = target_hash
         self.result = ''
         self.max_length = max_length
+        self.task_id = task_id
         self.packages = []
-        for start_string in Md5HashTask.yieldCharCombinations((self.max_length - 4 if (self.max_length - 4) > 0 else 1), include_not_max_length=True):
-            self.packages.append(Md5HashTask(ip, port, target_hash, start_string))
+        self.packages.append(Md5HashPackage(ip, port, target_hash, ''))
+
+        if int(max_length) > Md5HashTask.package_size:
+            for start_string in Md5HashTask.yieldCharCombinations((self.max_length - Md5HashTask.package_size), include_not_max_length=True):
+                self.packages.append(Md5HashPackage(ip, port, target_hash, start_string))
+
         print('Number of packages {}'.format(len(self.packages)))
+
+    def __str__(self):
+        return 'task_id:{}, target_hash:{} and max_length:{}'.format(self.task_id, self.target_hash, self.max_length)
 
     @staticmethod
     def validateMd5HashTaskData(data):
         if type(data) is not dict:
-            return False
-        if 'ip' not in data.keys():
-            return False
-        if type(data['port']) is not str:
-            return False
-        if 'port' not in data.keys():
-            return False
-        if type(data['port']) is not int:
             return False
         if 'max_length' not in data.keys():
             return False
@@ -53,13 +58,10 @@ class Md5HashPackage:
         self.assigner_ip = ip
         self.assigner_port = port
 
-    def getResults(self):
-        for value in Md5HashTask.yieldCharCombinations(4, include_not_max_length = True if self.start_string == '' else False):
-            '''
+    def getResult(self):
+        for value in Md5HashTask.yieldCharCombinations(Md5HashTask.package_size, include_not_max_length = True if self.start_string == '' else False):
             h = hashlib.md5()
-            h.update(str.encode(char))
-            print(h.hexdigest())
-            '''
-            if self.start_string + value == self.target_hash:
-                return self.start_string + value
-        return ''
+            h.update(str.encode(self.start_string + value))
+            if(h.hexdigest() == self.target_hash):
+                self.result = self.start_string + value
+                break
