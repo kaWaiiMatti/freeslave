@@ -24,7 +24,10 @@ class Md5HashTask:
 
     def getDict(self, include_packages = False):
         if include_packages:
-            return {"target_hash":self.target_hash, "result":self.result, "max_length":self.max_length, "task_id":self.task_id, "packages":self.packages}
+            packages = []
+            for package in self.packages:
+                packages.append(package.getDict())
+            return {"target_hash":self.target_hash, "result":self.result, "max_length":self.max_length, "task_id":self.task_id, "packages":packages}
         return {"target_hash":self.target_hash, "result":self.result, "max_length":self.max_length, "task_id":self.task_id}
 
     @staticmethod
