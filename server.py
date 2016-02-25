@@ -70,6 +70,11 @@ def main():
                 return HTTPResponse(body=json.dumps(task.getDict()), status=200)
         return HTTPResponse(status=404)
 
+    @app.route('/api/tasks/<id:int>', method='DELETE')
+    def deleteTask(id):
+        if fs.removeTask(id):
+            return HTTPResponse(status=204)
+        return HTTPResponse(status=404)
 
     @app.route('/api/packages')
     def acceptPackages():

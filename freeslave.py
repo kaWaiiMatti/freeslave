@@ -42,7 +42,6 @@ class FreeSlave:
         except FileNotFoundError:
             pass
 
-
     def getOwnNodeData(self):
         return {'ip': self.ip, 'port': self.port}
 
@@ -63,6 +62,17 @@ class FreeSlave:
         self.tasks.append(task)
         self.write_tasks()
         return True
+
+    def removeTask(self, id):
+        for task in self.tasks:
+            if task.task_id == id:
+                self.tasks.remove(task)
+                self.write_tasks()
+                for package in self._packages:
+                    if package.related_task == id:
+                        self._packages.remove(package)
+                return True
+        return False
 
     def addResult(self, data):
         #TODO: check if task id and others match and add result
