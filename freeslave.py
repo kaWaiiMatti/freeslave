@@ -1,9 +1,11 @@
 from node import Node
-from task_md5 import Md5HashTask
+from task_md5 import Md5HashTask, Md5HashPackage
 import json
 
 
 class FreeSlave:
+    tasks_filename = 'tasks.dat'
+
     def __init__(self, ip, port):
         self.ip = ip
         self.port = port
@@ -17,13 +19,29 @@ class FreeSlave:
         self._packages = []
         self._max_packages = 10 #TODO: determine value for this
 
+        self.load_tasks()
+
     def write_tasks(self):
-        f = open('tasks.dat', 'w')
+        f = open(FreeSlave.tasks_filename, 'w')
         tasks = []
         for task in self.tasks:
             tasks.append(task.getDict(include_packages=True))
         f.write(json.dumps(tasks))
         f.close()
+
+    def load_tasks(self):
+        try:
+            f = open(FreeSlave.tasks_filename, 'r')
+            data = json.loads(f.read())
+            f.close()
+            for task in data:
+                temp_task = Md5HashTask(ip=self.ip, port=self.port, target_hash=task['target_hash'], task_id=task['task_id'], max_length=task['max_length'], create_packages=False)
+                for package in task['packages']:
+                    temp_task.packages.append(Md5HashPackage(package)) #TODO: finish this
+                self.addTask(temp_task)
+        except FileNotFoundError:
+            pass
+
 
     def getOwnNodeData(self):
         return {'ip': self.ip, 'port': self.port}
@@ -44,7 +62,6 @@ class FreeSlave:
         #TODO: check if task already exists
         self.tasks.append(task)
         self.write_tasks()
-        print('There are {} tasks in queue.'.format(len(self.tasks)))
         return True
 
     def addResult(self, data):

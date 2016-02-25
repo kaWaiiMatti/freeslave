@@ -5,19 +5,18 @@ import json
 class Md5HashTask:
     package_size = 4
 
-    def __init__(self, ip, port, target_hash, task_id, max_length = 6):
+    def __init__(self, ip, port, target_hash, task_id, max_length = 6, create_packages = True):
         self.target_hash = target_hash
         self.result = ''
         self.max_length = max_length
         self.task_id = task_id
         self.packages = []
-        self.packages.append(Md5HashPackage({'assigner_ip':ip, 'assigner_port':port, 'target_hash':target_hash, 'start_string':'', 'task_id':task_id}))
 
-        if int(max_length) > Md5HashTask.package_size:
-            for start_string in Md5HashTask.yieldCharCombinations((self.max_length - Md5HashTask.package_size), include_not_max_length=True):
-                self.packages.append(Md5HashPackage({'assigner_ip':ip, 'assigner_port':port, 'target_hash':target_hash, 'start_string':start_string, 'task_id':task_id}))
-
-        print('Number of packages {}'.format(len(self.packages)))
+        if create_packages:
+            self.packages.append(Md5HashPackage({'assigner_ip':ip, 'assigner_port':port, 'target_hash':target_hash, 'start_string':'', 'task_id':task_id}))
+            if int(max_length) > Md5HashTask.package_size:
+                for start_string in Md5HashTask.yieldCharCombinations((self.max_length - Md5HashTask.package_size), include_not_max_length=True):
+                    self.packages.append(Md5HashPackage({'assigner_ip':ip, 'assigner_port':port, 'target_hash':target_hash, 'start_string':start_string, 'task_id':task_id}))
 
     def __str__(self):
         return 'task_id:{}, target_hash:{} and max_length:{}'.format(self.task_id, self.target_hash, self.max_length)
@@ -72,7 +71,7 @@ class Md5HashPackage:
         return json.dumps(self.getDict())
 
     def getDict(self):
-        return {"target_hash":self.target_hash, "start_string":self.start_string, "assigner_ip":self.assigner_ip, "assigner_port":self.assigner_port, "type":"md5hashpackage"}
+        return {"target_hash":self.target_hash, "start_string":self.start_string, "assigner_ip":self.assigner_ip, "assigner_port":self.assigner_port, "type":"md5hashpackage", "task_id":self.related_task}
 
     def getResult(self):
         for value in Md5HashTask.yieldCharCombinations(Md5HashTask.package_size, include_not_max_length = True if self.start_string == '' else False):
