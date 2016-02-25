@@ -26,7 +26,7 @@ class FreeSlave:
         tasks = []
         for task in self.tasks:
             tasks.append(task.getDict(include_packages=True))
-        f.write(json.dumps(tasks))
+        f.write(json.dumps({'last_task_id':self.last_task_id, 'tasks':tasks}))
         f.close()
 
     def load_tasks(self):
@@ -34,7 +34,8 @@ class FreeSlave:
             f = open(FreeSlave.tasks_filename, 'r')
             data = json.loads(f.read())
             f.close()
-            for task in data:
+            self.last_task_id = data['last_task_id']
+            for task in data['tasks']:
                 temp_task = Md5HashTask(ip=self.ip, port=self.port, target_hash=task['target_hash'], task_id=task['task_id'], max_length=task['max_length'], create_packages=False)
                 for package in task['packages']:
                     temp_task.packages.append(Md5HashPackage(package)) #TODO: finish this
@@ -58,7 +59,14 @@ class FreeSlave:
         return True
 
     def addTask(self, task):
-        #TODO: check if task already exists
+        #TODO: make checking global, not specific to md5hashtask
+        for item in self.tasks:
+            if item.task_id == task.task_id:
+                print('Task with id {} already exists!'.format(task.task_id))
+                return False
+            if item.target_hash == task.target_hash and item.max_length >= task.max_length:
+                print('Task with same target_hash and same or greater max_length already exists!')
+                return False
         self.tasks.append(task)
         self.write_tasks()
         return True

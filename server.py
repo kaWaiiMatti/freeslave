@@ -57,7 +57,9 @@ def main():
         if(Md5HashTask.validateMd5HashTaskData(data)):
             if fs.addTask(Md5HashTask(ip=HOST, port=PORT, target_hash=data['target_hash'], max_length=data['max_length'], task_id=fs.getTaskId())):
                 #TODO: assign working packages
-                pass
+                return HTTPResponse(status=202)
+            else:
+                return HTTPResponse(body='Task with given id or similar parameters already exists!', status=409)
         for task in fs.tasks:
             print(task)
         return HTTPResponse(body='success', status=200)
