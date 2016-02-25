@@ -1,4 +1,5 @@
 import hashlib
+import json
 
 
 class Md5HashTask:
@@ -10,16 +11,21 @@ class Md5HashTask:
         self.max_length = max_length
         self.task_id = task_id
         self.packages = []
-        self.packages.append(Md5HashPackage(ip, port, target_hash, ''))
+        self.packages.append(Md5HashPackage({'assigner_ip':ip, 'assigner_port':port, 'target_hash':target_hash, 'start_string':'', 'task_id':task_id}))
 
         if int(max_length) > Md5HashTask.package_size:
             for start_string in Md5HashTask.yieldCharCombinations((self.max_length - Md5HashTask.package_size), include_not_max_length=True):
-                self.packages.append(Md5HashPackage(ip, port, target_hash, start_string))
+                self.packages.append(Md5HashPackage({'assigner_ip':ip, 'assigner_port':port, 'target_hash':target_hash, 'start_string':start_string, 'task_id':task_id}))
 
         print('Number of packages {}'.format(len(self.packages)))
 
     def __str__(self):
         return 'task_id:{}, target_hash:{} and max_length:{}'.format(self.task_id, self.target_hash, self.max_length)
+
+    def getDict(self, include_packages = False):
+        if include_packages:
+            return {"target_hash":self.target_hash, "result":self.result, "max_length":self.max_length, "task_id":self.task_id, "packages":self.packages}
+        return {"target_hash":self.target_hash, "result":self.result, "max_length":self.max_length, "task_id":self.task_id}
 
     @staticmethod
     def validateMd5HashTaskData(data):
@@ -51,12 +57,19 @@ class Md5HashTask:
 
 
 class Md5HashPackage:
-    def __init__(self, ip, port, target_hash, start_string):
-        self.target_hash = target_hash
+    def __init__(self, data):
+        self.target_hash = data['target_hash']
         self.result = ''
-        self.start_string = start_string
-        self.assigner_ip = ip
-        self.assigner_port = port
+        self.start_string = data['start_string']
+        self.assigner_ip = data['assigner_ip']
+        self.assigner_port = data['assigner_port']
+        self.related_task = data['task_id']
+
+    def __str__(self):
+        return json.dumps(self.getDict())
+
+    def getDict(self):
+        return {"target_hash":self.target_hash, "start_string":self.start_string, "assigner_ip":self.assigner_ip, "assigner_port":self.assigner_port, "type":"md5hashpackage"}
 
     def getResult(self):
         for value in Md5HashTask.yieldCharCombinations(Md5HashTask.package_size, include_not_max_length = True if self.start_string == '' else False):
@@ -65,3 +78,47 @@ class Md5HashPackage:
             if(h.hexdigest() == self.target_hash):
                 self.result = self.start_string + value
                 break
+
+    @staticmethod
+    def validate_md5hashpackage_data(data):
+        if type(data) is not dict:
+            print('not dict')
+            return False
+        if 'target_hash' not in data.keys():
+            print('no target_hash')
+            return False
+        if type(data['target_hash']) is not str:
+            print('target_hash not str')
+            return False
+        if len(data['target_hash']) != 32:
+            print('wrong target_hash length')
+            return False
+        if 'assigner_ip' not in data.keys():
+            print('no assinger_ip')
+            return False
+        if type(data['assigner_ip']) is not str:
+            print('assigner_ip not str')
+            return False
+        if len(data['assigner_ip']) < 5:
+            print('too short assigner_ip')
+            return False
+        if 'assigner_port' not in data.keys():
+            print('no assigner_port')
+            return False
+        if type(data['assigner_port']) is not int:
+            return False
+        if 'task_id' not in data.keys():
+            return False
+        if type(data['task_id']) is not int:
+            return False
+        if 'start_string' not in data.keys():
+            return False
+        if type(data['start_string']) is not str:
+            return False
+        if 'type' not in data.keys():
+            return False
+        if type(data['type']) is not str:
+            return False
+        if(data['type'] != 'md5hashpackage'):
+            return False
+        return True

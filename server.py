@@ -46,8 +46,10 @@ def main():
 
     @app.route('/api/tasks')
     def getAllTasks():
-        #TODO: response json array of all tasks
-        pass
+        tasks = []
+        for task in fs.tasks:
+            tasks.append(task.getDict())
+        return HTTPResponse(body=json.dumps(tasks), status=200)
 
     @app.route('/api/tasks', method='POST')
     def addTask():
@@ -63,19 +65,36 @@ def main():
 
     @app.route('/api/tasks/<id:int>')
     def getTask(id):
-        #TODO: get task information based on id and return it
-        pass
+        for task in fs.tasks:
+            if task.task_id == id:
+                return HTTPResponse(body=json.dumps(task.getDict()), status=200)
+        return HTTPResponse(status=404)
+
 
     @app.route('/api/packages')
     def acceptPackages():
-        #TODO: return amount of working packages node accepts in json format
-        pass
+        data = {'accept_packages':fs.getPackageBufferLeft()}
+        HTTPResponse(body=json.dumps(data), status=200)
 
     @app.route('/api/packages', method='POST')
     def addPackages():
-        #TODO: add working packages to buffer and start executing if not max worker amount
-        pass
-
+        data = json.loads(bytes.decode(request.body.read()))
+        received_packages = []
+        for package in data:
+            if 'type' not in package.keys():
+                return HTTPResponse(body='No type defined for package:{}'.format(package), status=400)
+            if package['type'] == 'md5hashpackage':
+                if(Md5HashPackage.validate_md5hashpackage_data(package)):
+                    received_packages.append(Md5HashPackage(package))
+                else:
+                    return HTTPResponse(body='Invalid or insufficient parameters for m5hashpackage. Package:{}'.format(package), status=400)
+            else:
+                return HTTPResponse(body='Unknown package type.', status=400)
+        for package in received_packages:
+            fs.addPackage(package)
+        for package in fs._packages:
+            print(package)
+        #TODO: start working on packages if not max worker amount!
 
     @app.route('/api/packages/<task_id:int>/<package_id:int>', method='POST')
     def receiveResult(task_id, package_id):
@@ -91,7 +110,6 @@ def main():
     def workerKeepAlive():
         #TODO: update worker last connected time
         pass
-
 
     @app.route('/api/processes/<process_id:int>', method='DELETE')
     def unregisterWorker():

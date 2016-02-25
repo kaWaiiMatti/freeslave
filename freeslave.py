@@ -1,5 +1,7 @@
 from node import Node
 from task_md5 import Md5HashTask
+import json
+
 
 class FreeSlave:
     def __init__(self, ip, port):
@@ -14,6 +16,14 @@ class FreeSlave:
 
         self._packages = []
         self._max_packages = 10 #TODO: determine value for this
+
+    def write_tasks(self):
+        f = open('tasks.dat', 'w')
+        tasks = []
+        for task in self.tasks:
+            tasks.append(task.getDict(include_packages=True))
+        f.write(json.dumps(tasks))
+        f.close()
 
     def getOwnNodeData(self):
         return {'ip': self.ip, 'port': self.port}
@@ -33,7 +43,18 @@ class FreeSlave:
     def addTask(self, task):
         #TODO: check if task already exists
         self.tasks.append(task)
+        self.write_tasks()
         print('There are {} tasks in queue.'.format(len(self.tasks)))
+        return True
+
+    def addResult(self, data):
+        #TODO: check if task id and others match and add result
+        #TODO: remove not found result from task from the beginning
+        self.write_tasks()
+        return True
+
+    def addPackage(self, package):
+        self._packages.append(package)
         return True
 
     def getOtherNodes(self):
@@ -44,7 +65,7 @@ class FreeSlave:
         return other_nodes
 
     def getPackageBufferLeft(self):
-        return self._max_packages - len(self._packages)
+        return self._max_packages - len(self._packages) if len(self._packages) < self._max_packages else 0
 
     # TEST METHODS
     def printNodes(self):
