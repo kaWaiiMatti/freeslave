@@ -117,12 +117,11 @@ def main():
         data = json.loads(bytes.decode(request.body.read()))
         if not FreeSlave.validate_register_worker_data(data):
             return HTTPResponse(body=json.dumps({'error':'Posted data did not pass validator.'}), status=400)
-        print('data:{}'.format(data))
         for package in fs._packages:
-            print('package:{}'.format(package))
             if package.task_id == data['task_id'] and package.start_string == data['package_identifier'] and package.assigner_ip == data['assigner_ip'] and package.assigner_port == data['assigner_port']:
                 package.set_process_id(data['process_id'])
                 package.update_last_active()
+                print('Worker count:{}'.format(fs.get_active_worker_count()))
                 return HTTPResponse(status=204)
         return HTTPResponse(body=json.dumps({'error':'Could not find package with given parameters.'}), status=404)
 

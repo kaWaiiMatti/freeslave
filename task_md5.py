@@ -75,7 +75,7 @@ class Md5HashPackage:
         self.assigned_port = None
 
     def __str__(self):
-        return json.dumps(self.getDict())
+        return 'Package - assigner:{}:{}, task_id:{}, start_string:{}, pid:{}'.format(self.assigner_ip, self.assigner_port, self.task_id, self.start_string, self.process_id)
 
     def getDict(self):
         return {"target_hash":self.target_hash, "start_string":self.start_string, "assigner_ip":self.assigner_ip, "assigner_port":self.assigner_port, "type":"md5hashpackage", "task_id":self.task_id}

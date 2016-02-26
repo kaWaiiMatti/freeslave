@@ -114,6 +114,8 @@ class FreeSlave:
         count = 0
 
         for package in self._packages:
+            if package.last_active == None:
+                continue
             if (current_time - package.last_active) > FreeSlave.inactive_process_time_limit:
                 package.last_active = None
                 package.process_id = None
@@ -126,6 +128,12 @@ class FreeSlave:
         if len(self._packages) == 0:
             print('Empty package list!')
             return False
+
+        if self.get_active_worker_count() >= self._max_workers:
+            print('Max number of workers running already!')
+            return False
+
+        print('Worker count:{}'.format(self.get_active_worker_count()))
 
         for package in self._packages:
             if package.last_active == None and package.process_id == None:
@@ -141,16 +149,15 @@ class FreeSlave:
                     response = None
                     node = client.HTTPConnection(self.ip, self.port)
                     for i in range(3):
-                        node.request("POST", "/api/processes", json.dumps({'process_id':newpid, 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
+                        node.request("POST", "/api/processes", json.dumps({'process_id':os.getpid(), 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
                         response = node.getresponse()
-                        print(response.status)
-                        if response.status == 200:
-                            break
-                    #TODO: register process
+                        if response.status == 204:
+                            os._exit(0)
+
                     #TODO: package.getResult()
                     #TODO: post result to assigner
                     #TODO: unregister process
-                    os._exit(0)
+
                     #End of worker process code
 
                 return True
@@ -186,7 +193,6 @@ class FreeSlave:
             else:
                 print('something went wong... :(')
             #node.request("POST", "/api/processes", json.dumps({'process_id':newpid, 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
-        print(len(self._packages))
 
     def convert_to_dict(self, list):
         items = []
