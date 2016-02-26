@@ -1,21 +1,21 @@
-import time
+from time import time
 
 
 class Node:
     def __init__(self, data):
         self.ip = data['ip']
         self.port = data['port']
-        self.last_active = data['last_active'] if 'last_active' in data.keys() else time.time()
+        self.last_active = data['last_active'] if 'last_active' in data.keys() else int(time())
 
     def __str__(self):
         return 'node {}:{}'.format(self.ip, self.port)
 
     def updateLastActive(self):
-        self.last_active = time.time()
+        self.last_active = int(time())
         return True
 
     def getSinceLastActive(self):
-        return int(time.time() - self.last_active)
+        return int(time()) - self.last_active
 
     def getDict(self):
         return {'ip':self.ip, 'port':self.port, 'last_active':int(self.last_active)}

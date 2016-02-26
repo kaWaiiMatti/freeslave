@@ -78,10 +78,14 @@ def main():
             return HTTPResponse(status=204)
         return HTTPResponse(status=404)
 
-    @app.route('/api/packages')
-    def acceptPackages():
-        data = {'accept_packages':fs.getPackageBufferLeft()}
-        HTTPResponse(body=json.dumps(data), status=200)
+    @app.route('/api/packages/<ip>/<port:int>')
+    def acceptPackages(ip, port):
+        data = {'ip':ip, 'port':port}
+        if FreeSlave.validate_package_get_request(data):
+            #TODO: calculate how many can be assigned to given ip & port (max half of buffer should be assigned to single node!)
+            body = {'accept_packages':fs.getPackageBufferLeft()}
+            return HTTPResponse(body=json.dumps(body), status=200)
+        return HTTPResponse(body=json.dumps({'error':'Request did not pass validator! Required values are ip(str) and port(int).'}), status=400)
 
     @app.route('/api/packages', method='POST')
     def addPackages():
@@ -110,18 +114,39 @@ def main():
 
     @app.route('/api/processes', method='POST')
     def registerWorker():
-        #TODO: check if current pid not in worker list and add if not. Set last connected time
-        pass
+        data = json.loads(bytes.decode(request.body.read()))
+        if not FreeSlave.validate_register_worker_data(data):
+            return HTTPResponse(body=json.dumps({'error':'Posted data did not pass validator.'}), status=400)
+        print('data:{}'.format(data))
+        for package in fs._packages:
+            print('package:{}'.format(package))
+            if package.task_id == data['task_id'] and package.start_string == data['package_identifier'] and package.assigner_ip == data['assigner_ip'] and package.assigner_port == data['assigner_port']:
+                package.set_process_id(data['process_id'])
+                package.update_last_active()
+                return HTTPResponse(status=204)
+        return HTTPResponse(body=json.dumps({'error':'Could not find package with given parameters.'}), status=404)
 
     @app.route('/api/processes/<process_id:int>', method='POST')
-    def workerKeepAlive():
-        #TODO: update worker last connected time
-        pass
+    def workerKeepAlive(process_id):
+        for package in fs._packages:
+            if package.process_id == process_id:
+                package.update_last_active()
+                return HTTPResponse(status=204)
+        return HTTPResponse(body=json.dumps({'error':'Process with given process_id cannot be found!'}), status=404)
 
     @app.route('/api/processes/<process_id:int>', method='DELETE')
-    def unregisterWorker():
-        #TODO: remove worker from worker list
-        pass
+    def unregisterWorker(process_id):
+        for package in fs._packages:
+            if package.process_id == process_id:
+                fs._packages.remove(package)
+                return HTTPResponse(status=204)
+        return HTTPResponse(body=json.dumps({'error':'Process with given process_id cannot be found!'}), status=404)
+
+    @app.route('/api/test', method='POST')
+    def test():
+        fs.delegate_packages()
+        fs.start_worker()
+
 
     run(app, host=HOST, port=PORT)
 
@@ -131,11 +156,11 @@ if __name__ == "__main__":
 '''
 
 newpid = os.fork()
-        if newpid == 0:
-            for i in range(10):
-                print('this works')
-            os._exit(0)
-        else:
-            return ','.join(findPrimes(1000))
+    if newpid == 0:
+        for i in range(10):
+            print('this works')
+        os._exit(0)
+    else:
+        return ','.join(findPrimes(1000))
 
 '''

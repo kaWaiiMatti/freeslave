@@ -1,3 +1,4 @@
+from time import time
 import hashlib
 import json
 
@@ -6,6 +7,7 @@ class Md5HashTask:
     package_size = 4
 
     def __init__(self, ip, port, target_hash, task_id, max_length = 6, create_packages = True):
+        self.type = 'md5hashtask'
         self.target_hash = target_hash
         self.result = ''
         self.max_length = max_length
@@ -60,18 +62,23 @@ class Md5HashTask:
 
 class Md5HashPackage:
     def __init__(self, data):
+        self.type = 'md5hashpackage'
         self.target_hash = data['target_hash']
         self.result = ''
         self.start_string = data['start_string']
         self.assigner_ip = data['assigner_ip']
         self.assigner_port = data['assigner_port']
-        self.related_task = data['task_id']
+        self.task_id = data['task_id']
+        self.process_id = None
+        self.last_active = None
+        self.assigned_ip = None
+        self.assigned_port = None
 
     def __str__(self):
         return json.dumps(self.getDict())
 
     def getDict(self):
-        return {"target_hash":self.target_hash, "start_string":self.start_string, "assigner_ip":self.assigner_ip, "assigner_port":self.assigner_port, "type":"md5hashpackage", "task_id":self.related_task}
+        return {"target_hash":self.target_hash, "start_string":self.start_string, "assigner_ip":self.assigner_ip, "assigner_port":self.assigner_port, "type":"md5hashpackage", "task_id":self.task_id}
 
     def getResult(self):
         for value in Md5HashTask.yieldCharCombinations(Md5HashTask.package_size, include_not_max_length = True if self.start_string == '' else False):
@@ -80,6 +87,20 @@ class Md5HashPackage:
             if(h.hexdigest() == self.target_hash):
                 self.result = self.start_string + value
                 break
+
+    def set_process_id(self, process_id):
+        self.process_id = process_id
+
+    def update_last_active(self):
+        self.last_active = time()
+
+    def assign_to(self, node):
+        self.assigned_ip = node.ip
+        self.assigned_port = node.port
+
+    def release(self):
+        self.assigned_ip = None
+        self.assigned_port = None
 
     @staticmethod
     def validate_md5hashpackage_data(data):

@@ -1,10 +1,15 @@
+from http import client
 from node import Node
 from task_md5 import Md5HashTask, Md5HashPackage
+from time import time, sleep
+import os
 import json
 
 
 class FreeSlave:
     tasks_filename = 'tasks.dat'
+    inactive_process_time_limit = 60
+    known_package_types = [Md5HashPackage]
 
     def __init__(self, ip, port):
         self.ip = ip
@@ -18,6 +23,8 @@ class FreeSlave:
 
         self._packages = []
         self._max_packages = 10 #TODO: determine value for this
+
+        self._max_workers = 1
 
         self.load_tasks()
 
@@ -101,6 +108,160 @@ class FreeSlave:
 
     def getPackageBufferLeft(self):
         return self._max_packages - len(self._packages) if len(self._packages) < self._max_packages else 0
+
+    def get_active_worker_count(self):
+        current_time = int(time())
+        count = 0
+
+        for package in self._packages:
+            if (current_time - package.last_active) > FreeSlave.inactive_process_time_limit:
+                package.last_active = None
+                package.process_id = None
+            if package.last_active is not None:
+                count = count + 1
+
+        return count
+
+    def start_worker(self):
+        if len(self._packages) == 0:
+            print('Empty package list!')
+            return False
+
+        for package in self._packages:
+            if package.last_active == None and package.process_id == None:
+                if type(package) not in FreeSlave.known_package_types:
+                    print('Unknown package type:{}'.format(type(package)))
+                    continue
+
+                package.update_last_active()
+
+                newpid = os.fork()
+                if newpid == 0:
+                    #Worker process code
+                    response = None
+                    node = client.HTTPConnection(self.ip, self.port)
+                    for i in range(3):
+                        node.request("POST", "/api/processes", json.dumps({'process_id':newpid, 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
+                        response = node.getresponse()
+                        print(response.status)
+                        if response.status == 200:
+                            break
+                    #TODO: register process
+                    #TODO: package.getResult()
+                    #TODO: post result to assigner
+                    #TODO: unregister process
+                    os._exit(0)
+                    #End of worker process code
+
+                return True
+        print('Could not find packages to be started!')
+        return False
+
+    def delegate_packages(self):
+        if len(self.tasks) == 0:
+            print('No tasks to delegate!')
+            return False
+        packages = self.get_packages(lock_packages=False)
+        if packages is None:
+            print('No packages available!')
+            return False
+        for node in self.nodes:
+            if node.ip == self.ip and node.port == self.port:
+                buffer = self.getPackageBufferLeft()
+                if buffer == 0:
+                    continue
+                packages = self.get_packages(max_count=buffer)
+                self.set_assigned_to_packages(node=node, packages=packages)
+                for package in packages:
+                    self._packages.append(package)
+                continue
+
+            #TODO: finish this and test that it works!
+            connection = client.HTTPConnection(node.ip, node.port)
+            connection.request("GET", "/api/packages/{}/{}".format(self.ip, self.port))
+            response = connection.getresponse()
+            if response.status == 200:
+                node.updateLastActive()
+                data = json.loads(response.read())
+            else:
+                print('something went wong... :(')
+            #node.request("POST", "/api/processes", json.dumps({'process_id':newpid, 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
+        print(len(self._packages))
+
+    def convert_to_dict(self, list):
+        items = []
+        for item in list:
+            items.append(item.getDict())
+        return items
+
+    def set_assigned_to_packages(self, node, packages):
+        for package in packages:
+            found = False
+            for task in self.tasks:
+                for task_package in task.packages:
+                    if task_package.assigner_ip == package.assigner_ip and task_package.assigner_port == package.assigner_port and task_package.task_id == package.task_id and task_package.start_string == package.start_string:
+                        task_package.assign_to(node)
+                        found = True
+                    if found:
+                        break
+                if found:
+                    break
+
+    def get_packages(self, lock_packages = True, max_count = 10):
+        packages = []
+        for task in self.tasks:
+            for package in task.packages:
+                if package.assigned_ip == None:
+                    if lock_packages:
+                        package.assign_to(Node({'ip':'locked', 'port':'locked'}))
+                    packages.append(package)
+                    if len(packages) >= max_count:
+                        return packages
+            if len(packages) > 0:
+                return packages
+        return None
+
+    @staticmethod
+    def validate_package_get_request(data):
+        if type(data) is not dict:
+            return False
+        if 'ip' not in data.keys():
+            return False
+        if type(data['ip']) is not str:
+            return False
+        if len(data['ip']) < 5:
+            return False
+        if 'port' not in data.keys():
+            return False
+        if type(data['port']) is not int:
+            return False
+        return True
+
+    @staticmethod
+    def validate_register_worker_data(data):
+        if type(data) is not dict:
+            return False
+        if 'assigner_ip' not in data.keys():
+            return False
+        if type(data['assigner_ip']) is not str:
+            return False
+        if 'assigner_port' not in data.keys():
+            return False
+        if type(data['assigner_port']) is not int:
+            return False
+        if 'process_id' not in data.keys():
+            return False
+        if type(data['process_id']) is not int:
+            return False
+        if 'task_id' not in data.keys():
+            return False
+        if type(data['task_id']) is not int:
+            return False
+        if 'package_identifier' not in data.keys():
+            return False
+        if type(data['package_identifier']) is not str:
+            return False
+        return True
 
     # TEST METHODS
     def printNodes(self):
