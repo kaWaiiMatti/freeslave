@@ -58,16 +58,27 @@ class FreeSlave:
         return self.last_task_id
 
     def register_to_node(self, node):
+        print('registering to:{}'.format(node))
         connection = client.HTTPConnection(node.ip, node.port)
         other_nodes = []
+        print(len(self.getOtherNodes()))
         for other_node in self.getOtherNodes():
+            print('enter')
             other_nodes.append(other_node.getDict())
+        print('other nodes:{}'.format(other_nodes))
         for i in range(3):
             connection.request("POST", "/api/nodes", json.dumps({'ip':self.ip, 'port':self.port, 'nodes':other_nodes}))
             response = connection.getresponse()
             if response.status == 200:
-                received_nodes = bytes.decode(response.read())
+                received_nodes = json.loads(bytes.decode(response.read()))['nodes']
+                new_nodes = []
+                for received_node in received_nodes:
+                    if self.addNode(received_node):
+                        new_nodes.append(Node(received_node))
+                for new_node in new_nodes:
+                    self.register_to_node(new_node)
                 return True
+        return False
 
     def addNode(self, data):
         for node in self.nodes:
@@ -111,10 +122,13 @@ class FreeSlave:
         self._packages.append(package)
         return True
 
+    #TODO: this seems to be broken... :EE
     def getOtherNodes(self):
         other_nodes = []
+        print('own ip and port:{}:{}'.format(self.ip, self.port))
         for node in self.nodes:
             if node.ip != self.ip and node.port != self.port:
+                print('enter: {}'.format(node))
                 other_nodes.append(node)
         return other_nodes
 

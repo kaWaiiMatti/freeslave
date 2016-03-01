@@ -32,7 +32,7 @@ def main():
         nodes = []
         for node in fs.getOtherNodes():
             nodes.append(node.getDict())
-        return HTTPResponse(body=json.dumps(nodes), status=200)
+        return HTTPResponse(body=json.dumps(nodes), status=200, headers={'Content-Type':'application/json'})
 
     #Another node registers itself to this node.
     #Node ip and port are given in JSON format in body.
@@ -46,13 +46,11 @@ def main():
         response_nodes = []
         for known_node in fs.getOtherNodes():
             known = False
-            print('known {}'.format(known_node))
             for node in data['nodes']:
                 if Node(node) == known_node:
                     known = True
                     break
             if not known:
-                print('unknown: {}'.format(node))
                 response_nodes.append(known_node.getDict())
         #ADD REGISTERING NODE
         fs.addNode(data)
@@ -63,11 +61,7 @@ def main():
                 new_nodes.append(Node(node))
         #REGISTER TO NEW NODES
         for node in new_nodes:
-            print(fs.register_to_node(node))
-            #TODO: register to new_nodes
-        print('list of known nodes:')
-        for node in fs.nodes:
-            print(node)
+            fs.register_to_node(node)
         return HTTPResponse(body=json.dumps({'nodes':response_nodes}), status=200)
 
     #Another node pings to test if server is up.
