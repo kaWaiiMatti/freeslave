@@ -2,15 +2,19 @@ from bottle import Bottle, run, route, BaseRequest, FormsDict, request, HTTPResp
 from freeslave import FreeSlave
 from node import Node
 from task_md5 import Md5HashTask, Md5HashPackage
-import os
 import json
 
 def main():
-    #TODO: get as parameters or detect automatically?
-    HOST = 'localhost'
-    PORT = 8080
+    config = {'ip':'localhost', 'port':8080}
+    try:
+        f = open('config.dat', mode='r')
+        data = json.loads(f.read())
+        for key in data:
+            config[key] = data[key]
+    except:
+        pass
 
-    fs = FreeSlave(HOST, PORT)
+    fs = FreeSlave(config['ip'], config['port'])
 
     app = Bottle(autojson=True)
 
@@ -34,21 +38,37 @@ def main():
     #Node ip and port are given in JSON format in body.
     @app.route('/api/nodes', method='POST')
     def registerNode():
+        #Verify data
         data = json.loads(bytes.decode(request.body.read()))
         if not Node.validateNodeData(data):
-            return HTTPResponse(body=json.dumps({'error':'Invalid own node information.'}), status=400)
-        if fs.addNode(data):
-            print('Added new node {}:{}'.format(data['ip'], data['port']))
-        '''
-        #TODO: add other nodes and response 400
+            return HTTPResponse(body=json.dumps({'error':'Invalid node information.'}), status=400)
+        #Create known nodes response
+        response_nodes = []
+        for known_node in fs.getOtherNodes():
+            known = False
+            print('known {}'.format(known_node))
+            for node in data['nodes']:
+                if Node(node) == known_node:
+                    known = True
+                    break
+            if not known:
+                print('unknown: {}'.format(node))
+                response_nodes.append(known_node.getDict())
+        #ADD REGISTERING NODE
+        fs.addNode(data)
+        #LOOP LIST OF RECEIVED NODES AND TRY TO ADD THEM
+        new_nodes = []
         for node in data['nodes']:
-            if Node.validateNodeData(data):
-                if fs.addNode(data):
-                    pass
-            #TODO: parse list of known nodes and add new ones. Register to new ones.
-            #TODO: update known nodes list to drive
-        '''
-        return HTTPResponse(status=200)
+            if fs.addNode(node):
+                new_nodes.append(Node(node))
+        #REGISTER TO NEW NODES
+        for node in new_nodes:
+            print(fs.register_to_node(node))
+            #TODO: register to new_nodes
+        print('list of known nodes:')
+        for node in fs.nodes:
+            print(node)
+        return HTTPResponse(body=json.dumps({'nodes':response_nodes}), status=200)
 
     #Another node pings to test if server is up.
     @app.route('/api/nodes/ping')
@@ -66,7 +86,7 @@ def main():
     def addTask():
         data = json.loads(bytes.decode(request.body.read()))
         if(Md5HashTask.validateMd5HashTaskData(data)):
-            if fs.addTask(Md5HashTask(ip=HOST, port=PORT, target_hash=data['target_hash'], max_length=data['max_length'], task_id=fs.getTaskId())):
+            if fs.addTask(Md5HashTask(ip=config['ip'], port=config['port'], target_hash=data['target_hash'], max_length=data['max_length'], task_id=fs.getTaskId())):
                 #TODO: assign working packages
                 return HTTPResponse(status=202)
             else:
@@ -174,19 +194,7 @@ def main():
         fs.start_worker()
 
 
-    run(app, host=HOST, port=PORT)
+    run(app, host=config['ip'], port=config['port'])
 
 if __name__ == "__main__":
     main()
-
-'''
-
-newpid = os.fork()
-    if newpid == 0:
-        for i in range(10):
-            print('this works')
-        os._exit(0)
-    else:
-        return ','.join(findPrimes(1000))
-
-'''

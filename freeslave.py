@@ -57,11 +57,24 @@ class FreeSlave:
         self.last_task_id = self.last_task_id + 1
         return self.last_task_id
 
+    def register_to_node(self, node):
+        connection = client.HTTPConnection(node.ip, node.port)
+        other_nodes = []
+        for other_node in self.getOtherNodes():
+            other_nodes.append(other_node.getDict())
+        for i in range(3):
+            connection.request("POST", "/api/nodes", json.dumps({'ip':self.ip, 'port':self.port, 'nodes':other_nodes}))
+            response = connection.getresponse()
+            if response.status == 200:
+                received_nodes = bytes.decode(response.read())
+                return True
+
     def addNode(self, data):
         for node in self.nodes:
             if node.ip == data['ip'] and node.port == data['port']:
                 return False
         self.nodes.append(Node(data))
+        print('Added new node {}:{}'.format(data['ip'], data['port']))
         return True
 
     def addTask(self, task):

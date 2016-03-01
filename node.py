@@ -10,6 +10,9 @@ class Node:
     def __str__(self):
         return 'node {}:{}'.format(self.ip, self.port)
 
+    def __eq__(self, other):
+        return self.ip == other.ip and self.port == other.port
+
     def updateLastActive(self):
         self.last_active = int(time())
         return True
@@ -38,4 +41,17 @@ class Node:
             return False
         if type(data['nodes']) is not list:
             return False
+        for node in data['nodes']:
+            if type(node) is not dict:
+                return False
+            if 'ip' not in node.keys():
+                return False
+            if type(node['ip']) is not str:
+                return False
+            if(len(node['ip']) < 5):
+                return False
+            if 'port' not in node.keys():
+                return False
+            if type(node['port']) is not int:
+                return False
         return True
