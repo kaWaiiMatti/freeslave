@@ -60,7 +60,6 @@ class FreeSlave:
     def addNode(self, data):
         for node in self.nodes:
             if node.ip == data['ip'] and node.port == data['port']:
-                print('Node already exists!')
                 return False
         self.nodes.append(Node(data))
         return True
@@ -146,12 +145,12 @@ class FreeSlave:
                 newpid = os.fork()
                 if newpid == 0:
                     #Worker process code
-                    response = None
                     node = client.HTTPConnection(self.ip, self.port)
                     for i in range(3):
                         node.request("POST", "/api/processes", json.dumps({'process_id':os.getpid(), 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
                         response = node.getresponse()
                         if response.status == 204:
+                            result = package.getResult()
                             os._exit(0)
 
                     #TODO: package.getResult()

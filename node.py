@@ -34,4 +34,8 @@ class Node:
             return False
         if type(data['port']) is not int:
             return False
+        if 'nodes' not in data.keys():
+            return False
+        if type(data['nodes']) is not list:
+            return False
         return True

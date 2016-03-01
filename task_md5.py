@@ -31,6 +31,13 @@ class Md5HashTask:
             return {"target_hash":self.target_hash, "result":self.result, "max_length":self.max_length, "task_id":self.task_id, "packages":packages}
         return {"target_hash":self.target_hash, "result":self.result, "max_length":self.max_length, "task_id":self.task_id}
 
+    def add_result(self, identifier, data):
+        for package in self.packages:
+            if package.start_string == identifier:
+                print('correct package found!') #TODO: implement this
+                return True
+        return False
+
     @staticmethod
     def validateMd5HashTaskData(data):
         if type(data) is not dict:
@@ -86,7 +93,7 @@ class Md5HashPackage:
             h.update(str.encode(self.start_string + value))
             if(h.hexdigest() == self.target_hash):
                 self.result = self.start_string + value
-                break
+                return self.result
 
     def set_process_id(self, process_id):
         self.process_id = process_id
@@ -103,7 +110,7 @@ class Md5HashPackage:
         self.assigned_port = None
 
     @staticmethod
-    def validate_md5hashpackage_data(data):
+    def validate_md5hashpackage_result(data):
         if type(data) is not dict:
             print('not dict')
             return False
@@ -127,6 +134,42 @@ class Md5HashPackage:
             return False
         if 'assigner_port' not in data.keys():
             print('no assigner_port')
+            return False
+        if type(data['assigner_port']) is not int:
+            return False
+        if 'task_id' not in data.keys():
+            return False
+        if type(data['task_id']) is not int:
+            return False
+        if 'start_string' not in data.keys():
+            return False
+        if type(data['start_string']) is not str:
+            return False
+        if 'type' not in data.keys():
+            return False
+        if type(data['type']) is not str:
+            return False
+        if(data['type'] != 'md5hashpackage'):
+            return False
+        return True
+
+    @staticmethod
+    def validate_md5hashpackage_data(data):
+        if type(data) is not dict:
+            return False
+        if 'target_hash' not in data.keys():
+            return False
+        if type(data['target_hash']) is not str:
+            return False
+        if len(data['target_hash']) != 32:
+            return False
+        if 'assigner_ip' not in data.keys():
+            return False
+        if type(data['assigner_ip']) is not str:
+            return False
+        if len(data['assigner_ip']) < 5:
+            return False
+        if 'assigner_port' not in data.keys():
             return False
         if type(data['assigner_port']) is not int:
             return False

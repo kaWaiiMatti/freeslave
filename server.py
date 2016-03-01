@@ -1,4 +1,4 @@
-from bottle import Bottle, run, route, BaseRequest, FormsDict, request, HTTPResponse
+from bottle import Bottle, run, route, BaseRequest, FormsDict, request, HTTPResponse, static_file
 from freeslave import FreeSlave
 from node import Node
 from task_md5 import Md5HashTask, Md5HashPackage
@@ -12,12 +12,15 @@ def main():
 
     fs = FreeSlave(HOST, PORT)
 
-    app = Bottle()
+    app = Bottle(autojson=True)
 
     @app.route('/')
-    def getClient():
-        #TODO: implement client and return it here
-        return "client here"
+    def get_client():
+        return static_file('index.html', root='client/')
+
+    @app.route('/<filename>')
+    def get_static_file(filename):
+        return static_file(filename, root='client/')
 
     #Another node request all known nodes.
     @app.route('/api/nodes')
@@ -32,11 +35,19 @@ def main():
     @app.route('/api/nodes', method='POST')
     def registerNode():
         data = json.loads(bytes.decode(request.body.read()))
-        if Node.validateNodeData(data):
-            fs.addNode(data)
+        if not Node.validateNodeData(data):
+            return HTTPResponse(body=json.dumps({'error':'Invalid own node information.'}), status=400)
+        if fs.addNode(data):
+            print('Added new node {}:{}'.format(data['ip'], data['port']))
+        '''
+        #TODO: add other nodes and response 400
+        for node in data['nodes']:
+            if Node.validateNodeData(data):
+                if fs.addNode(data):
+                    pass
             #TODO: parse list of known nodes and add new ones. Register to new ones.
             #TODO: update known nodes list to drive
-            print('Added new node {}:{}'.format(data['ip'], data['port']))
+        '''
         return HTTPResponse(status=200)
 
     #Another node pings to test if server is up.
@@ -49,7 +60,7 @@ def main():
         tasks = []
         for task in fs.tasks:
             tasks.append(task.getDict())
-        return HTTPResponse(body=json.dumps(tasks), status=200)
+        return HTTPResponse(body=json.dumps(tasks), status=200, headers={'Content-Type':'application/json'})
 
     @app.route('/api/tasks', method='POST')
     def addTask():
@@ -62,7 +73,7 @@ def main():
                 return HTTPResponse(body='Task with given id or similar parameters already exists!', status=409)
         for task in fs.tasks:
             print(task)
-        return HTTPResponse(body='success', status=200)
+        return HTTPResponse(status=200)
         #TODO: check if task exists with given parameters. If not, add and start executing
 
     @app.route('/api/tasks/<id:int>')
@@ -109,8 +120,24 @@ def main():
 
     @app.route('/api/packages/<task_id:int>/<package_id:int>', method='POST')
     def receiveResult(task_id, package_id):
-        #TODO: check if task_id is valid, check if package id is valid, check if does not have response and then add result, response 200
-        pass
+        data = json.loads(bytes.decode(request.body.read()))
+        if 'type' not in data.keys():
+            return HTTPResponse(body=json.dumps({'error':'Type is not defined!'}), status=400)
+            #TODO: check if task_id is valid, check if package id is valid, check if does not have response and then add result, response 200
+        if data['type'] == 'md5hashpackage':
+            if not Md5HashPackage.validate_md5hashpackage_result(data):
+                return HTTPResponse(body=json.dumps({'error':'Data did not pass validator!'}), status=400)
+        #elif  data['type'] == 'another_package_type':
+        #    if not Another_package_class.validate_result(data):
+        #        return HTTPResponse(body=json.dumps({'error':'Data did not pass validator!'}), status=400)
+        else:
+            return HTTPResponse(body=json.dumps({'error':'Unknown package type!'}), status=400)
+        for task in fs.tasks:
+            if task_id == task.task_id:
+                task.add_result(identifier=package_id, data=data)
+                return HTTPResponse(status=200)
+
+        return HTTPResponse(body=json.dumps({'error':'Could not find task with given id!'}), status=404)
 
     @app.route('/api/processes', method='POST')
     def registerWorker():
