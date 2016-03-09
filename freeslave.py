@@ -1,9 +1,10 @@
+import os
+import json
+
 from http import client
 from node import Node
 from task_md5 import MD5HashTask, MD5HashPackage
 from time import time
-import os
-import json
 
 # TODO: replace printing with logging.logger
 # TODO: replace HTTPConnection with requests
@@ -250,12 +251,7 @@ class FreeSlave:
             found = False
             for task in self.tasks:
                 for task_package in task.packages:
-                    # TODO: make task_packages comparable so no need for a
-                    # four line if clause
-                    if task_package.assigner_ip == package.assigner_ip \
-                            and task_package.assigner_port == package.assigner_port \
-                            and task_package.task_id == package.task_id \
-                            and task_package.package_id == package.package_id:
+                    if task_package == package:
                         task_package.assign_to(node)
                         found = True
                     if found:

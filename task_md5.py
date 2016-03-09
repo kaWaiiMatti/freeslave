@@ -1,8 +1,9 @@
-from time import time
 import hashlib
 
-ALLOWED_CHARS = 'abcdefghijklmnopqrstuvwxyz' \
-                'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+from task_package import TaskPackage
+from string import ascii_letters, digits
+
+ALLOWED_CHARS = ascii_letters + digits
 
 
 class MD5HashTask:
@@ -110,39 +111,16 @@ class MD5HashTask:
                 yield new
 
 
-class MD5HashPackage:
+class MD5HashPackage(TaskPackage):
     def __init__(self, data):
-        self.type = 'md5hashpackage'
+        data["type"] = "md5hashpackage"
+        super().__init__(data)
         self.target_hash = data['target_hash']
-        self.result = ''
-        self.package_id = data['package_id']
-        self.assigner_ip = data['assigner_ip']
-        self.assigner_port = data['assigner_port']
-        self.task_id = data['task_id']
-        self.process_id = None
-        self.last_active = None
-        self.assigned_ip = None
-        self.assigned_port = None
-
-    def __str__(self):
-        return 'Package - assigner:{}:{}, task_id:{}, start_string:{}, ' \
-               'pid:{}'.format(
-                self.assigner_ip,
-                self.assigner_port,
-                self.task_id,
-                self.package_id,
-                self.process_id
-                )
 
     def get_dict(self):
-        return {
-            "target_hash": self.target_hash,
-            "package_id": self.package_id,
-            "assigner_ip": self.assigner_ip,
-            "assigner_port": self.assigner_port,
-            "type": "md5hashpackage",
-            "task_id": self.task_id
-        }
+        superdict = super().get_dict()
+        superdict["target_hash"] = self.target_hash
+        return superdict
 
     def get_result(self):
         if self.package_id == '':
@@ -157,20 +135,6 @@ class MD5HashPackage:
             if h.hexdigest() == self.target_hash:
                 self.result = self.package_id + value
                 return self.result
-
-    def set_process_id(self, process_id):
-        self.process_id = process_id
-
-    def update_last_active(self):
-        self.last_active = time()
-
-    def assign_to(self, node):
-        self.assigned_ip = node.ip
-        self.assigned_port = node.port
-
-    def release(self):
-        self.assigned_ip = None
-        self.assigned_port = None
 
     @staticmethod
     def validate_md5hashpackage_result(data):

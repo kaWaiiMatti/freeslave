@@ -1,8 +1,10 @@
+import json
+
 from bottle import Bottle, run, route, BaseRequest, FormsDict, request, HTTPResponse, static_file
 from freeslave import FreeSlave
 from node import Node
+from task_package import TaskPackage
 from task_md5 import MD5HashTask, MD5HashPackage
-import json
 
 
 def main():
@@ -232,13 +234,10 @@ def main():
                     {'error': 'Posted data did not pass validator.'}
                 )
             )
+        posted_package = TaskPackage(data)
         # TODO: Why are we accessing protected variable here?
         for package in fs._packages:
-            # TODO: Make packages comparable
-            if package.task_id == data['task_id'] \
-                    and package.package_id == data['package_id'] \
-                    and package.assigner_ip == data['assigner_ip'] \
-                    and package.assigner_port == data['assigner_port']:
+            if package == posted_package:
                 package.set_process_id(data['process_id'])
                 package.update_last_active()
                 print('Worker count:{}'.format(fs.get_active_worker_count()))
