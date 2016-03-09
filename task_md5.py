@@ -23,7 +23,7 @@ class MD5HashTask:
                     'assigner_ip': ip,
                     'assigner_port': port,
                     'target_hash': target_hash,
-                    'start_string': '',
+                    'package_id': '',
                     'task_id': task_id
                 })
             )
@@ -36,7 +36,7 @@ class MD5HashTask:
                             'assigner_ip': ip,
                             'assigner_port': port,
                             'target_hash': target_hash,
-                            'start_string': start_string,
+                            'package_id': start_string,
                             'task_id': task_id
                         })
                     )
@@ -70,7 +70,7 @@ class MD5HashTask:
 
     def add_result(self, identifier, data):
         for package in self.packages:
-            if package.start_string == identifier:
+            if package.package_id == identifier:
                 print('correct package found!')  # TODO: implement this
                 return True
         return False
@@ -115,7 +115,7 @@ class MD5HashPackage:
         self.type = 'md5hashpackage'
         self.target_hash = data['target_hash']
         self.result = ''
-        self.start_string = data['start_string']
+        self.package_id = data['start_string']
         self.assigner_ip = data['assigner_ip']
         self.assigner_port = data['assigner_port']
         self.task_id = data['task_id']
@@ -130,14 +130,14 @@ class MD5HashPackage:
                 self.assigner_ip,
                 self.assigner_port,
                 self.task_id,
-                self.start_string,
+                self.package_id,
                 self.process_id
                 )
 
     def get_dict(self):
         return {
             "target_hash": self.target_hash,
-            "start_string": self.start_string,
+            "package_id": self.package_id,
             "assigner_ip": self.assigner_ip,
             "assigner_port": self.assigner_port,
             "type": "md5hashpackage",
@@ -145,7 +145,7 @@ class MD5HashPackage:
         }
 
     def get_result(self):
-        if self.start_string == '':
+        if self.package_id == '':
             include_not_max_length = True
         else:
             include_not_max_length = False
@@ -153,9 +153,9 @@ class MD5HashPackage:
                 MD5HashTask.package_size,
                 include_not_max_length=include_not_max_length):
             h = hashlib.md5()
-            h.update(str.encode(self.start_string + value))
+            h.update(str.encode(self.package_id + value))
             if h.hexdigest() == self.target_hash:
-                self.result = self.start_string + value
+                self.result = self.package_id + value
                 return self.result
 
     def set_process_id(self, process_id):
@@ -204,9 +204,9 @@ class MD5HashPackage:
             return False
         if type(data['task_id']) is not int:
             return False
-        if 'start_string' not in data.keys():
+        if 'package_id' not in data.keys():
             return False
-        if type(data['start_string']) is not str:
+        if type(data['package_id']) is not str:
             return False
         if 'type' not in data.keys():
             return False
@@ -240,9 +240,9 @@ class MD5HashPackage:
             return False
         if type(data['task_id']) is not int:
             return False
-        if 'start_string' not in data.keys():
+        if 'package_id' not in data.keys():
             return False
-        if type(data['start_string']) is not str:
+        if type(data['package_id']) is not str:
             return False
         if 'type' not in data.keys():
             return False

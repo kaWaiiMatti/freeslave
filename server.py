@@ -236,7 +236,7 @@ def main():
         for package in fs._packages:
             # TODO: Make packages comparable
             if package.task_id == data['task_id'] \
-                    and package.start_string == data['package_identifier'] \
+                    and package.package_id == data['package_id'] \
                     and package.assigner_ip == data['assigner_ip'] \
                     and package.assigner_port == data['assigner_port']:
                 package.set_process_id(data['process_id'])

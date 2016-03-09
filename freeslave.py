@@ -192,7 +192,7 @@ class FreeSlave:
                     # Worker process code
                     node = client.HTTPConnection(self.ip, self.port)
                     for i in range(3):
-                        node.request("POST", "/api/processes", json.dumps({'process_id':os.getpid(), 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
+                        node.request("POST", "/api/processes", json.dumps({'process_id':os.getpid(), 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_id':package.package_id}))
                         response = node.getresponse()
                         if response.status == 204:
                             result = package.get_result()
@@ -236,7 +236,7 @@ class FreeSlave:
                 data = json.loads(response.read())
             else:
                 print('something went wong... :(')
-            #node.request("POST", "/api/processes", json.dumps({'process_id':newpid, 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
+            #node.request("POST", "/api/processes", json.dumps({'process_id':newpid, 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_id':package.package_id}))
 
     @staticmethod
     def convert_to_dict(convertable):
@@ -255,7 +255,7 @@ class FreeSlave:
                     if task_package.assigner_ip == package.assigner_ip \
                             and task_package.assigner_port == package.assigner_port \
                             and task_package.task_id == package.task_id \
-                            and task_package.start_string == package.start_string:
+                            and task_package.package_id == package.package_id:
                         task_package.assign_to(node)
                         found = True
                     if found:
@@ -315,9 +315,9 @@ class FreeSlave:
             return False
         if type(data['task_id']) is not int:
             return False
-        if 'package_identifier' not in data.keys():
+        if 'package_id' not in data.keys():
             return False
-        if type(data['package_identifier']) is not str:
+        if type(data['package_id']) is not str:
             return False
         return True
 
