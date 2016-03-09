@@ -1,9 +1,12 @@
 from http import client
 from node import Node
 from task_md5 import Md5HashTask, Md5HashPackage
-from time import time, sleep
+from time import time
 import os
 import json
+
+# TODO: replace printing with logging.logger
+# TODO: replace HTTPConnection with requests
 
 
 class FreeSlave:
@@ -16,25 +19,26 @@ class FreeSlave:
         self.port = port
 
         self.nodes = []
-        self.nodes.append(Node({'ip':self.ip, 'port':self.port}))
+        self.nodes.append(Node({'ip': self.ip, 'port': self.port}))
 
         self.last_task_id = 0
         self.tasks = []
 
         self._packages = []
-        self._max_packages = 10 #TODO: determine value for this
+        self._max_packages = 10  # TODO: determine value for this
 
         self._max_workers = 1
 
         self.load_tasks()
 
     def write_tasks(self):
-        f = open(FreeSlave.tasks_filename, 'w')
         tasks = []
         for task in self.tasks:
             tasks.append(task.getDict(include_packages=True))
-        f.write(json.dumps({'last_task_id':self.last_task_id, 'tasks':tasks}))
-        f.close()
+        with open(FreeSlave.tasks_filename, "wb") as f:
+            f.write(json.dumps(
+                {'last_task_id': self.last_task_id, 'tasks': tasks}
+            ))
 
     def load_tasks(self):
         try:
@@ -43,26 +47,34 @@ class FreeSlave:
             f.close()
             self.last_task_id = data['last_task_id']
             for task in data['tasks']:
-                temp_task = Md5HashTask(ip=self.ip, port=self.port, target_hash=task['target_hash'], task_id=task['task_id'], max_length=task['max_length'], create_packages=False)
+                temp_task = Md5HashTask(
+                    ip=self.ip,
+                    port=self.port,
+                    target_hash=task['target_hash'],
+                    task_id=task['task_id'],
+                    max_length=task['max_length'],
+                    create_packages=False
+                )
                 for package in task['packages']:
-                    temp_task.packages.append(Md5HashPackage(package)) #TODO: finish this
-                self.addTask(temp_task)
+                    temp_task.packages.append(Md5HashPackage(package))
+                    # TODO: finish this
+                self.add_task(temp_task)
         except FileNotFoundError:
             pass
 
-    def getOwnNodeData(self):
+    def get_own_node_data(self):
         return {'ip': self.ip, 'port': self.port}
 
-    def getTaskId(self):
-        self.last_task_id = self.last_task_id + 1
+    def get_task_id(self):
+        self.last_task_id += 1
         return self.last_task_id
 
     def register_to_node(self, node):
         print('registering to:{}'.format(node))
         connection = client.HTTPConnection(node.ip, node.port)
         other_nodes = []
-        print(len(self.getOtherNodes()))
-        for other_node in self.getOtherNodes():
+        print(len(self.get_other_nodes()))
+        for other_node in self.get_other_nodes():
             print('enter')
             other_nodes.append(other_node.getDict())
         print('other nodes:{}'.format(other_nodes))
@@ -73,14 +85,14 @@ class FreeSlave:
                 received_nodes = json.loads(bytes.decode(response.read()))['nodes']
                 new_nodes = []
                 for received_node in received_nodes:
-                    if self.addNode(received_node):
+                    if self.add_node(received_node):
                         new_nodes.append(Node(received_node))
                 for new_node in new_nodes:
                     self.register_to_node(new_node)
                 return True
         return False
 
-    def addNode(self, data):
+    def add_node(self, data):
         for node in self.nodes:
             if node.ip == data['ip'] and node.port == data['port']:
                 return False
@@ -88,42 +100,43 @@ class FreeSlave:
         print('Added new node {}:{}'.format(data['ip'], data['port']))
         return True
 
-    def addTask(self, task):
-        #TODO: make checking global, not specific to md5hashtask
+    def add_task(self, task):
+        # TODO: make checking global, not specific to md5hashtask
         for item in self.tasks:
             if item.task_id == task.task_id:
                 print('Task with id {} already exists!'.format(task.task_id))
                 return False
-            if item.target_hash == task.target_hash and item.max_length >= task.max_length:
+            if item.target_hash == task.target_hash \
+                    and item.max_length >= task.max_length:
                 print('Task with same target_hash and same or greater max_length already exists!')
                 return False
         self.tasks.append(task)
         self.write_tasks()
         return True
 
-    def removeTask(self, id):
+    def remove_task(self, task_id):
         for task in self.tasks:
-            if task.task_id == id:
+            if task.task_id == task_id:
                 self.tasks.remove(task)
                 self.write_tasks()
                 for package in self._packages:
-                    if package.related_task == id:
+                    if package.related_task == task_id:
                         self._packages.remove(package)
                 return True
         return False
 
-    def addResult(self, data):
-        #TODO: check if task id and others match and add result
-        #TODO: remove not found result from task from the beginning
+    def add_result(self, data):
+        # TODO: check if task id and others match and add result
+        # TODO: remove not found result from task from the beginning
         self.write_tasks()
         return True
 
-    def addPackage(self, package):
+    def add_package(self, package):
         self._packages.append(package)
         return True
 
-    #TODO: this seems to be broken... :EE
-    def getOtherNodes(self):
+    # TODO: this seems to be broken... :EE
+    def get_other_nodes(self):
         other_nodes = []
         print('own ip and port:{}:{}'.format(self.ip, self.port))
         for node in self.nodes:
@@ -132,21 +145,26 @@ class FreeSlave:
                 other_nodes.append(node)
         return other_nodes
 
-    def getPackageBufferLeft(self):
-        return self._max_packages - len(self._packages) if len(self._packages) < self._max_packages else 0
+    def get_package_buffer_left(self):
+        if len(self._packages) < self._max_packages:
+            buffer_len = self._max_packages - len(self._packages)
+        else:
+            buffer_len = 0
+        return buffer_len
 
     def get_active_worker_count(self):
         current_time = int(time())
         count = 0
 
         for package in self._packages:
-            if package.last_active == None:
+            if package.last_active is None:
                 continue
-            if (current_time - package.last_active) > FreeSlave.inactive_process_time_limit:
+            if (current_time - package.last_active) > \
+                    FreeSlave.inactive_process_time_limit:
                 package.last_active = None
                 package.process_id = None
             if package.last_active is not None:
-                count = count + 1
+                count += 1
 
         return count
 
@@ -162,7 +180,7 @@ class FreeSlave:
         print('Worker count:{}'.format(self.get_active_worker_count()))
 
         for package in self._packages:
-            if package.last_active == None and package.process_id == None:
+            if package.last_active is None and package.process_id is None:
                 if type(package) not in FreeSlave.known_package_types:
                     print('Unknown package type:{}'.format(type(package)))
                     continue
@@ -171,20 +189,20 @@ class FreeSlave:
 
                 newpid = os.fork()
                 if newpid == 0:
-                    #Worker process code
+                    # Worker process code
                     node = client.HTTPConnection(self.ip, self.port)
                     for i in range(3):
                         node.request("POST", "/api/processes", json.dumps({'process_id':os.getpid(), 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
                         response = node.getresponse()
                         if response.status == 204:
                             result = package.getResult()
-                            os._exit(0)
+                            os._exit(0)  # Wut?
 
-                    #TODO: package.getResult()
-                    #TODO: post result to assigner
-                    #TODO: unregister process
+                    # TODO: package.getResult()
+                    # TODO: post result to assigner
+                    # TODO: unregister process
 
-                    #End of worker process code
+                    # End of worker process code
 
                 return True
         print('Could not find packages to be started!')
@@ -200,7 +218,7 @@ class FreeSlave:
             return False
         for node in self.nodes:
             if node.ip == self.ip and node.port == self.port:
-                buffer = self.getPackageBufferLeft()
+                buffer = self.get_package_buffer_left()
                 if buffer == 0:
                     continue
                 packages = self.get_packages(max_count=buffer)
@@ -209,7 +227,7 @@ class FreeSlave:
                     self._packages.append(package)
                 continue
 
-            #TODO: finish this and test that it works!
+            # TODO: finish this and test that it works!
             connection = client.HTTPConnection(node.ip, node.port)
             connection.request("GET", "/api/packages/{}/{}".format(self.ip, self.port))
             response = connection.getresponse()
@@ -220,9 +238,10 @@ class FreeSlave:
                 print('something went wong... :(')
             #node.request("POST", "/api/processes", json.dumps({'process_id':newpid, 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
 
-    def convert_to_dict(self, list):
+    @staticmethod
+    def convert_to_dict(convertable):
         items = []
-        for item in list:
+        for item in convertable:
             items.append(item.getDict())
         return items
 
@@ -231,7 +250,12 @@ class FreeSlave:
             found = False
             for task in self.tasks:
                 for task_package in task.packages:
-                    if task_package.assigner_ip == package.assigner_ip and task_package.assigner_port == package.assigner_port and task_package.task_id == package.task_id and task_package.start_string == package.start_string:
+                    # TODO: make task_packages comparable so no need for a
+                    # four line if clause
+                    if task_package.assigner_ip == package.assigner_ip \
+                            and task_package.assigner_port == package.assigner_port \
+                            and task_package.task_id == package.task_id \
+                            and task_package.start_string == package.start_string:
                         task_package.assign_to(node)
                         found = True
                     if found:
@@ -239,13 +263,15 @@ class FreeSlave:
                 if found:
                     break
 
-    def get_packages(self, lock_packages = True, max_count = 10):
+    def get_packages(self, lock_packages=True, max_count=10):
         packages = []
         for task in self.tasks:
             for package in task.packages:
-                if package.assigned_ip == None:
+                if package.assigned_ip is None:
                     if lock_packages:
-                        package.assign_to(Node({'ip':'locked', 'port':'locked'}))
+                        package.assign_to(
+                            Node({'ip': 'locked', 'port': 'locked'})
+                        )
                     packages.append(package)
                     if len(packages) >= max_count:
                         return packages
@@ -296,7 +322,6 @@ class FreeSlave:
         return True
 
     # TEST METHODS
-    def printNodes(self):
+    def print_nodes(self):
         for node in self.nodes:
             print(node)
-
