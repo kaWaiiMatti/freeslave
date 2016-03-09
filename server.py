@@ -1,7 +1,7 @@
 from bottle import Bottle, run, route, BaseRequest, FormsDict, request, HTTPResponse, static_file
 from freeslave import FreeSlave
 from node import Node
-from task_md5 import Md5HashTask, Md5HashPackage
+from task_md5 import MD5HashTask, MD5HashPackage
 import json
 
 
@@ -32,7 +32,7 @@ def main():
     def get_all_nodes():
         nodes = []
         for node in fs.get_other_nodes():
-            nodes.append(node.getDict())
+            nodes.append(node.get_dict())
         return HTTPResponse(
             status=200,
             headers={'Content-Type': 'application/json'},
@@ -59,7 +59,7 @@ def main():
                     known = True
                     break
             if not known:
-                response_nodes.append(known_node.getDict())
+                response_nodes.append(known_node.get_dict())
         # ADD REGISTERING NODE
         fs.add_node(data)
         # LOOP LIST OF RECEIVED NODES AND TRY TO ADD THEM
@@ -84,7 +84,7 @@ def main():
     def get_all_tasks():
         tasks = []
         for task in fs.tasks:
-            tasks.append(task.getDict())
+            tasks.append(task.get_dict())
         return HTTPResponse(
             status=200,
             headers={'Content-Type': 'application/json'},
@@ -94,8 +94,8 @@ def main():
     @app.route('/api/tasks', method='POST')
     def add_task():
         data = json.loads(bytes.decode(request.body.read()))
-        if Md5HashTask.validateMd5HashTaskData(data):
-            if fs.add_task(Md5HashTask(
+        if MD5HashTask.validate_md5hashtask_data(data):
+            if fs.add_task(MD5HashTask(
                     ip=config['ip'],
                     port=config['port'],
                     target_hash=data['target_hash'],
@@ -121,7 +121,7 @@ def main():
             if task.task_id == id:
                 return HTTPResponse(
                     status=200,
-                    body=json.dumps(task.getDict())
+                    body=json.dumps(task.get_dict())
                 )
         return HTTPResponse(status=404)
 
@@ -163,8 +163,8 @@ def main():
                     body='No type defined for package:{}'.format(package)
                 )
             if package['type'] == 'md5hashpackage':
-                if Md5HashPackage.validate_md5hashpackage_data(package):
-                    received_packages.append(Md5HashPackage(package))
+                if MD5HashPackage.validate_md5hashpackage_data(package):
+                    received_packages.append(MD5HashPackage(package))
                 else:
                     return HTTPResponse(
                         status=400,
@@ -194,7 +194,7 @@ def main():
             # TODO: check if task_id is valid, check if package id is valid,
             # check if does not have response and then add result, response 200
         if data['type'] == 'md5hashpackage':
-            if not Md5HashPackage.validate_md5hashpackage_result(data):
+            if not MD5HashPackage.validate_md5hashpackage_result(data):
                 return HTTPResponse(
                     status=400,
                     body=json.dumps({'error': 'Data did not pass validator!'})

@@ -1,12 +1,15 @@
 from time import time
 import hashlib
-import json
+
+ALLOWED_CHARS = 'abcdefghijklmnopqrstuvwxyz' \
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 
-class Md5HashTask:
+class MD5HashTask:
     package_size = 4
 
-    def __init__(self, ip, port, target_hash, task_id, max_length = 6, create_packages = True):
+    def __init__(self, ip, port, target_hash, task_id,
+                 max_length=6, create_packages=True):
         self.type = 'md5hashtask'
         self.target_hash = target_hash
         self.result = ''
@@ -15,31 +18,65 @@ class Md5HashTask:
         self.packages = []
 
         if create_packages:
-            self.packages.append(Md5HashPackage({'assigner_ip':ip, 'assigner_port':port, 'target_hash':target_hash, 'start_string':'', 'task_id':task_id}))
-            if int(max_length) > Md5HashTask.package_size:
-                for start_string in Md5HashTask.yieldCharCombinations((self.max_length - Md5HashTask.package_size), include_not_max_length=True):
-                    self.packages.append(Md5HashPackage({'assigner_ip':ip, 'assigner_port':port, 'target_hash':target_hash, 'start_string':start_string, 'task_id':task_id}))
+            self.packages.append(MD5HashPackage(
+                {
+                    'assigner_ip': ip,
+                    'assigner_port': port,
+                    'target_hash': target_hash,
+                    'start_string': '',
+                    'task_id': task_id
+                })
+            )
+            if int(max_length) > MD5HashTask.package_size:
+                for start_string in MD5HashTask.yield_char_combinations(
+                        (self.max_length - MD5HashTask.package_size),
+                        include_not_max_length=True):
+                    self.packages.append(MD5HashPackage(
+                        {
+                            'assigner_ip': ip,
+                            'assigner_port': port,
+                            'target_hash': target_hash,
+                            'start_string': start_string,
+                            'task_id': task_id
+                        })
+                    )
 
     def __str__(self):
-        return 'task_id:{}, target_hash:{} and max_length:{}'.format(self.task_id, self.target_hash, self.max_length)
+        return 'task_id:{}, target_hash:{} ' \
+               'and max_length:{}'.format(
+                self.task_id,
+                self.target_hash,
+                self.max_length
+                )
 
-    def getDict(self, include_packages = False):
+    def get_dict(self, include_packages=False):
         if include_packages:
             packages = []
             for package in self.packages:
-                packages.append(package.getDict())
-            return {"target_hash":self.target_hash, "result":self.result, "max_length":self.max_length, "task_id":self.task_id, "packages":packages}
-        return {"target_hash":self.target_hash, "result":self.result, "max_length":self.max_length, "task_id":self.task_id}
+                packages.append(package.get_dict())
+            return {
+                "target_hash": self.target_hash,
+                "result": self.result,
+                "max_length": self.max_length,
+                "task_id": self.task_id,
+                "packages": packages
+            }
+        return {
+            "target_hash": self.target_hash,
+            "result": self.result,
+            "max_length": self.max_length,
+            "task_id": self.task_id
+        }
 
     def add_result(self, identifier, data):
         for package in self.packages:
             if package.start_string == identifier:
-                print('correct package found!') #TODO: implement this
+                print('correct package found!')  # TODO: implement this
                 return True
         return False
 
     @staticmethod
-    def validateMd5HashTaskData(data):
+    def validate_md5hashtask_data(data):
         if type(data) is not dict:
             return False
         if 'max_length' not in data.keys():
@@ -57,17 +94,23 @@ class Md5HashTask:
         return True
 
     @staticmethod
-    def yieldCharCombinations(max_length, existing = '', include_not_max_length = False, allowed_characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'):
+    def yield_char_combinations(max_length, existing='',
+                                include_not_max_length=False,
+                                allowed_characters=ALLOWED_CHARS):
         for char in allowed_characters:
             new = existing + char
             if len(new) < max_length:
-                for item in  Md5HashTask.yieldCharCombinations(max_length, new, include_not_max_length, allowed_characters):
+                for item in MD5HashTask.yield_char_combinations(
+                        max_length,
+                        new,
+                        include_not_max_length,
+                        allowed_characters):
                     yield item
             if len(new) == max_length or include_not_max_length:
                 yield new
 
 
-class Md5HashPackage:
+class MD5HashPackage:
     def __init__(self, data):
         self.type = 'md5hashpackage'
         self.target_hash = data['target_hash']
@@ -82,16 +125,36 @@ class Md5HashPackage:
         self.assigned_port = None
 
     def __str__(self):
-        return 'Package - assigner:{}:{}, task_id:{}, start_string:{}, pid:{}'.format(self.assigner_ip, self.assigner_port, self.task_id, self.start_string, self.process_id)
+        return 'Package - assigner:{}:{}, task_id:{}, start_string:{}, ' \
+               'pid:{}'.format(
+                self.assigner_ip,
+                self.assigner_port,
+                self.task_id,
+                self.start_string,
+                self.process_id
+                )
 
-    def getDict(self):
-        return {"target_hash":self.target_hash, "start_string":self.start_string, "assigner_ip":self.assigner_ip, "assigner_port":self.assigner_port, "type":"md5hashpackage", "task_id":self.task_id}
+    def get_dict(self):
+        return {
+            "target_hash": self.target_hash,
+            "start_string": self.start_string,
+            "assigner_ip": self.assigner_ip,
+            "assigner_port": self.assigner_port,
+            "type": "md5hashpackage",
+            "task_id": self.task_id
+        }
 
-    def getResult(self):
-        for value in Md5HashTask.yieldCharCombinations(Md5HashTask.package_size, include_not_max_length = True if self.start_string == '' else False):
+    def get_result(self):
+        if self.start_string == '':
+            include_not_max_length = True
+        else:
+            include_not_max_length = False
+        for value in MD5HashTask.yield_char_combinations(
+                MD5HashTask.package_size,
+                include_not_max_length=include_not_max_length):
             h = hashlib.md5()
             h.update(str.encode(self.start_string + value))
-            if(h.hexdigest() == self.target_hash):
+            if h.hexdigest() == self.target_hash:
                 self.result = self.start_string + value
                 return self.result
 
@@ -149,7 +212,7 @@ class Md5HashPackage:
             return False
         if type(data['type']) is not str:
             return False
-        if(data['type'] != 'md5hashpackage'):
+        if data['type'] != 'md5hashpackage':
             return False
         return True
 
@@ -185,6 +248,6 @@ class Md5HashPackage:
             return False
         if type(data['type']) is not str:
             return False
-        if(data['type'] != 'md5hashpackage'):
+        if data['type'] != 'md5hashpackage':
             return False
         return True

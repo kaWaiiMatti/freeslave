@@ -1,6 +1,6 @@
 from http import client
 from node import Node
-from task_md5 import Md5HashTask, Md5HashPackage
+from task_md5 import MD5HashTask, MD5HashPackage
 from time import time
 import os
 import json
@@ -12,7 +12,7 @@ import json
 class FreeSlave:
     tasks_filename = 'tasks.dat'
     inactive_process_time_limit = 60
-    known_package_types = [Md5HashPackage]
+    known_package_types = [MD5HashPackage]
 
     def __init__(self, ip, port):
         self.ip = ip
@@ -34,7 +34,7 @@ class FreeSlave:
     def write_tasks(self):
         tasks = []
         for task in self.tasks:
-            tasks.append(task.getDict(include_packages=True))
+            tasks.append(task.get_dict(include_packages=True))
         with open(FreeSlave.tasks_filename, "wb") as f:
             f.write(json.dumps(
                 {'last_task_id': self.last_task_id, 'tasks': tasks}
@@ -47,7 +47,7 @@ class FreeSlave:
             f.close()
             self.last_task_id = data['last_task_id']
             for task in data['tasks']:
-                temp_task = Md5HashTask(
+                temp_task = MD5HashTask(
                     ip=self.ip,
                     port=self.port,
                     target_hash=task['target_hash'],
@@ -56,7 +56,7 @@ class FreeSlave:
                     create_packages=False
                 )
                 for package in task['packages']:
-                    temp_task.packages.append(Md5HashPackage(package))
+                    temp_task.packages.append(MD5HashPackage(package))
                     # TODO: finish this
                 self.add_task(temp_task)
         except FileNotFoundError:
@@ -76,7 +76,7 @@ class FreeSlave:
         print(len(self.get_other_nodes()))
         for other_node in self.get_other_nodes():
             print('enter')
-            other_nodes.append(other_node.getDict())
+            other_nodes.append(other_node.get_dict())
         print('other nodes:{}'.format(other_nodes))
         for i in range(3):
             connection.request("POST", "/api/nodes", json.dumps({'ip':self.ip, 'port':self.port, 'nodes':other_nodes}))
@@ -195,10 +195,10 @@ class FreeSlave:
                         node.request("POST", "/api/processes", json.dumps({'process_id':os.getpid(), 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_identifier':package.start_string}))
                         response = node.getresponse()
                         if response.status == 204:
-                            result = package.getResult()
+                            result = package.get_result()
                             os._exit(0)  # Wut?
 
-                    # TODO: package.getResult()
+                    # TODO: package.get_result()
                     # TODO: post result to assigner
                     # TODO: unregister process
 
@@ -242,7 +242,7 @@ class FreeSlave:
     def convert_to_dict(convertable):
         items = []
         for item in convertable:
-            items.append(item.getDict())
+            items.append(item.get_dict())
         return items
 
     def set_assigned_to_packages(self, node, packages):
