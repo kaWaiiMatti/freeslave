@@ -45,7 +45,7 @@ def main():
     def register_node():
         # Verify data
         data = json.loads(bytes.decode(request.body.read()))
-        if not Node.validateNodeData(data):
+        if not Node.validate_node_data(data):
             return HTTPResponse(
                 status=400,
                 body=json.dumps({'error': 'Invalid node information.'})

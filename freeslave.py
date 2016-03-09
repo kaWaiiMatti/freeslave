@@ -232,7 +232,7 @@ class FreeSlave:
             connection.request("GET", "/api/packages/{}/{}".format(self.ip, self.port))
             response = connection.getresponse()
             if response.status == 200:
-                node.updateLastActive()
+                node.update_last_active()
                 data = json.loads(response.read())
             else:
                 print('something went wong... :(')
