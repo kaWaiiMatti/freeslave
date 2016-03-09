@@ -115,7 +115,7 @@ class MD5HashPackage:
         self.type = 'md5hashpackage'
         self.target_hash = data['target_hash']
         self.result = ''
-        self.package_id = data['start_string']
+        self.package_id = data['package_id']
         self.assigner_ip = data['assigner_ip']
         self.assigner_port = data['assigner_port']
         self.task_id = data['task_id']
