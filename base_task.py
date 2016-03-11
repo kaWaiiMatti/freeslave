@@ -5,6 +5,40 @@ from time import time
 logger = logging.getLogger(__name__)
 
 
+class Task:
+    def __init__(self, task_id, max_length=6):
+        self.type = "basetask"
+        self.max_length = max_length
+        self.task_id = task_id
+        self.packages = []
+        self.result = ""
+
+    def __str__(self):
+        return "task_id: {}, max_length: {}".format(
+            self.task_id,
+            self.max_length
+            )
+
+    def get_dict(self, include_packages=False):
+        response = {
+            "task_id": self.task_id,
+            "result": self.result,
+            "max_length": self.max_length,
+        }
+
+        if include_packages:
+            response["packages"] = [p.get_digt() for p in self.packages]
+
+        return response
+
+    def add_result(self, identifier, data):
+        for package in self.packages:
+            if package.package_id == identifier:
+                print('correct package found!')  # TODO: implement this
+                return True
+        return False
+
+
 class TaskPackage:
     def __init__(self, data):
         try:

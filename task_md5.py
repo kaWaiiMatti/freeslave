@@ -1,80 +1,46 @@
 import hashlib
 
-from base_task import TaskPackage
+from base_task import Task, TaskPackage
 from string import ascii_letters, digits
 
 ALLOWED_CHARS = ascii_letters + digits
 
 
-class MD5HashTask:
+class MD5HashTask(Task):
     package_size = 4
 
     def __init__(self, ip, port, target_hash, task_id,
                  max_length=6, create_packages=True):
-        self.type = 'md5hashtask'
+        super().__init__(task_id, max_length)
+        self.type = "md5hashtask"
         self.target_hash = target_hash
-        self.result = ''
-        self.max_length = max_length
-        self.task_id = task_id
-        self.packages = []
 
         if create_packages:
-            self.packages.append(MD5HashPackage(
-                {
-                    'assigner_ip': ip,
-                    'assigner_port': port,
-                    'target_hash': target_hash,
-                    'package_id': '',
-                    'task_id': task_id
-                })
-            )
+            self._add_task_package("", ip, port, target_hash)
             if int(max_length) > MD5HashTask.package_size:
                 for start_string in MD5HashTask.yield_char_combinations(
                         (self.max_length - MD5HashTask.package_size),
                         include_not_max_length=True):
-                    self.packages.append(MD5HashPackage(
-                        {
-                            'assigner_ip': ip,
-                            'assigner_port': port,
-                            'target_hash': target_hash,
-                            'package_id': start_string,
-                            'task_id': task_id
-                        })
-                    )
+                    self._add_task_package(start_string, ip, port, target_hash)
 
     def __str__(self):
-        return 'task_id:{}, target_hash:{} ' \
-               'and max_length:{}'.format(
-                self.task_id,
-                self.target_hash,
-                self.max_length
-                )
+        return str(super()) + " target_hash: {}".format(self.target_hash)
+
+    def _add_task_package(self, package_id, ip, port, target_hash):
+        self.packages.append(MD5HashPackage(
+            {
+                'assigner_ip': ip,
+                'assigner_port': port,
+                'target_hash': target_hash,
+                'package_id': package_id,
+                'task_id': self.task_id
+            })
+        )
 
     def get_dict(self, include_packages=False):
-        if include_packages:
-            packages = []
-            for package in self.packages:
-                packages.append(package.get_dict())
-            return {
-                "target_hash": self.target_hash,
-                "result": self.result,
-                "max_length": self.max_length,
-                "task_id": self.task_id,
-                "packages": packages
-            }
-        return {
-            "target_hash": self.target_hash,
-            "result": self.result,
-            "max_length": self.max_length,
-            "task_id": self.task_id
-        }
-
-    def add_result(self, identifier, data):
-        for package in self.packages:
-            if package.package_id == identifier:
-                print('correct package found!')  # TODO: implement this
-                return True
-        return False
+        superdict = super().get_dict(include_packages)
+        superdict["target_hash"] = self.target_hash
+        return superdict
 
     @staticmethod
     def validate_md5hashtask_data(data):
