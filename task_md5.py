@@ -1,6 +1,6 @@
 import hashlib
 
-from task_package import TaskPackage
+from base_task import TaskPackage
 from string import ascii_letters, digits
 
 ALLOWED_CHARS = ascii_letters + digits

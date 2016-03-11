@@ -3,7 +3,7 @@ import json
 from bottle import Bottle, run, route, BaseRequest, FormsDict, request, HTTPResponse, static_file
 from freeslave import FreeSlave
 from node import Node
-from task_package import TaskPackage
+from base_task import TaskPackage
 from task_md5 import MD5HashTask, MD5HashPackage
 
 
