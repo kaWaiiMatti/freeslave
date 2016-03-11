@@ -25,7 +25,7 @@ class FreeSlave:
         self.last_task_id = 0
         self.tasks = []
 
-        self._packages = []
+        self.packages = []
         self._max_packages = 10  # TODO: determine value for this
 
         self._max_workers = 1
@@ -120,9 +120,9 @@ class FreeSlave:
             if task.task_id == task_id:
                 self.tasks.remove(task)
                 self.write_tasks()
-                for package in self._packages:
+                for package in self.packages:
                     if package.related_task == task_id:
-                        self._packages.remove(package)
+                        self.packages.remove(package)
                 return True
         return False
 
@@ -133,7 +133,7 @@ class FreeSlave:
         return True
 
     def add_package(self, package):
-        self._packages.append(package)
+        self.packages.append(package)
         return True
 
     # TODO: this seems to be broken... :EE
@@ -147,8 +147,8 @@ class FreeSlave:
         return other_nodes
 
     def get_package_buffer_left(self):
-        if len(self._packages) < self._max_packages:
-            buffer_len = self._max_packages - len(self._packages)
+        if len(self.packages) < self._max_packages:
+            buffer_len = self._max_packages - len(self.packages)
         else:
             buffer_len = 0
         return buffer_len
@@ -157,7 +157,7 @@ class FreeSlave:
         current_time = int(time())
         count = 0
 
-        for package in self._packages:
+        for package in self.packages:
             if package.last_active is None:
                 continue
             if (current_time - package.last_active) > \
@@ -170,7 +170,7 @@ class FreeSlave:
         return count
 
     def start_worker(self):
-        if len(self._packages) == 0:
+        if len(self.packages) == 0:
             print('Empty package list!')
             return False
 
@@ -180,7 +180,7 @@ class FreeSlave:
 
         print('Worker count:{}'.format(self.get_active_worker_count()))
 
-        for package in self._packages:
+        for package in self.packages:
             if package.last_active is None and package.process_id is None:
                 if type(package) not in FreeSlave.known_package_types:
                     print('Unknown package type:{}'.format(type(package)))
@@ -225,7 +225,7 @@ class FreeSlave:
                 packages = self.get_packages(max_count=buffer)
                 self.set_assigned_to_packages(node=node, packages=packages)
                 for package in packages:
-                    self._packages.append(package)
+                    self.packages.append(package)
                 continue
 
             # TODO: finish this and test that it works!

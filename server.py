@@ -181,8 +181,7 @@ def main():
                 )
         for package in received_packages:
             fs.add_package(package)
-        # TODO: Why are we accessing protected variable here?
-        for package in fs._packages:
+        for package in fs.packages:
             print(package)
         # TODO: start working on packages if not max worker amount!
 
@@ -236,8 +235,7 @@ def main():
                 )
             )
         posted_package = TaskPackage(data)
-        # TODO: Why are we accessing protected variable here?
-        for package in fs._packages:
+        for package in fs.packages:
             if package == posted_package:
                 package.set_process_id(data['process_id'])
                 package.update_last_active()
@@ -252,8 +250,7 @@ def main():
 
     @app.route('/api/processes/<process_id:int>', method='POST')
     def worker_keep_alive(process_id):
-        # TODO: Why are we accessing protected variable here?
-        for package in fs._packages:
+        for package in fs.packages:
             if package.process_id == process_id:
                 package.update_last_active()
                 return HTTPResponse(status=204)
@@ -266,10 +263,9 @@ def main():
 
     @app.route('/api/processes/<process_id:int>', method='DELETE')
     def unregister_worker(process_id):
-        # TODO: Why are we accessing protected variable here?
-        for package in fs._packages:
+        for package in fs.packages:
             if package.process_id == process_id:
-                fs._packages.remove(package)
+                fs.packages.remove(package)
                 return HTTPResponse(status=204)
 
         return HTTPResponse(
