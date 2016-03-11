@@ -20,6 +20,7 @@ def main():
     fs = FreeSlave(config['ip'], config['port'])
 
     app = Bottle(autojson=True)
+    run(app, host=config['ip'], port=config['port'])
 
     @app.route('/')
     def get_client():
@@ -282,9 +283,6 @@ def main():
     def test():
         fs.delegate_packages()
         fs.start_worker()
-
-    # TODO: Should this reside inside main()?
-    run(app, host=config['ip'], port=config['port'])
 
 if __name__ == "__main__":
     main()
