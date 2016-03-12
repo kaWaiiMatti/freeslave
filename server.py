@@ -20,7 +20,6 @@ def main():
     fs = FreeSlave(config['ip'], config['port'])
 
     app = Bottle(autojson=True)
-    run(app, host=config['ip'], port=config['port'])
 
     @app.route('/')
     def get_client():
@@ -279,6 +278,11 @@ def main():
     def test():
         fs.delegate_packages()
         fs.start_worker()
+
+    # OK, so this should be at the bottom. I feel so dirty having function
+    # definitions inside main() and then having logic both at the top and
+    # bottom...
+    run(app, host=config['ip'], port=config['port'])
 
 if __name__ == "__main__":
     main()
