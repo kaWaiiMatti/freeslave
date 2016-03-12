@@ -1,14 +1,13 @@
 import os
 import json
 import logging
+import requests
 
-from http import client
 from node import Node
 from task_md5 import MD5HashTask, MD5HashPackage
 from time import time
 
-# TODO: replace HTTPConnection with requests
-
+CONN_STRING = "{}:{}{}"  # ip:port/route
 logger = logging.getLogger(__name__)
 
 
@@ -79,18 +78,22 @@ class FreeSlave:
 
     def register_to_node(self, node):
         logger.debug('registering to:{}'.format(node))
-        connection = client.HTTPConnection(node.ip, node.port)
         other_nodes = []
         logger.debug(len(self.get_other_nodes()))
         for other_node in self.get_other_nodes():
             logger.debug('enter')
             other_nodes.append(other_node.get_dict())
         logger.debug('other nodes:{}'.format(other_nodes))
+        uri = CONN_STRING.format(node.ip, node.port, "/api/nodes"),
+        payload = {
+            'ip': self.ip,
+            'port': self.port,
+            'nodes': other_nodes
+        }
         for i in range(3):
-            connection.request("POST", "/api/nodes", json.dumps({'ip':self.ip, 'port':self.port, 'nodes':other_nodes}))
-            response = connection.getresponse()
-            if response.status == 200:
-                received_nodes = json.loads(bytes.decode(response.read()))['nodes']
+            response = requests.post(uri, json=payload)
+            if response.status_code == 200:
+                received_nodes = response.json()["nodes"]
                 new_nodes = []
                 for received_node in received_nodes:
                     if self.add_node(received_node):
@@ -198,11 +201,19 @@ class FreeSlave:
                 newpid = os.fork()
                 if newpid == 0:
                     # Worker process code
-                    node = client.HTTPConnection(self.ip, self.port)
+                    uri = CONN_STRING.format(
+                        self.ip, self.port, "/api/processes"
+                    )
+                    payload = {
+                        'process_id': os.getpid(),
+                        'assigner_ip': package.assigner_ip,
+                        'assigner_port': package.assigner_port,
+                        'task_id': package.task_id,
+                        'package_id': package.package_id
+                    }
                     for i in range(3):
-                        node.request("POST", "/api/processes", json.dumps({'process_id':os.getpid(), 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_id':package.package_id}))
-                        response = node.getresponse()
-                        if response.status == 204:
+                        response = requests.post(uri, json=payload)
+                        if response.status_code == 204:
                             result = package.get_result()
                             os._exit(0)  # Wut?
 
@@ -236,15 +247,28 @@ class FreeSlave:
                 continue
 
             # TODO: finish this and test that it works!
-            connection = client.HTTPConnection(node.ip, node.port)
-            connection.request("GET", "/api/packages/{}/{}".format(self.ip, self.port))
-            response = connection.getresponse()
-            if response.status == 200:
+            uri = CONN_STRING.format(
+                node.ip, node.port, "/api/packages/{}/{}".format(
+                    self.ip, self.port
+                )
+            )
+            response = requests.get(uri)
+            if response.status_code == 200:
                 node.update_last_active()
-                data = json.loads(response.read())
+                data = response.json()
             else:
                 logger.debug('something went wong... :(')
-            #node.request("POST", "/api/processes", json.dumps({'process_id':newpid, 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_id':package.package_id}))
+            """
+            uri = CONN_STRING.format(node.ip, node.port, "/api/process")
+            payload = {
+                'process_id': newpid,
+                'assigner_ip': package.assigner_ip,
+                'assigner_port': package.assigner_port,
+                'task_id': package.task_id,
+                'package_id': package.package_id
+            }
+            response = requests.post(uri, json=payload)
+            """
 
     @staticmethod
     def convert_to_dict(convertable):
