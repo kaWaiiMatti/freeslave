@@ -1,16 +1,23 @@
 import os
 import json
+import logging
 
 from http import client
 from node import Node
 from task_md5 import MD5HashTask, MD5HashPackage
 from time import time
 
-# TODO: replace printing with logging.logger
 # TODO: replace HTTPConnection with requests
+
+logger = logging.getLogger(__name__)
 
 
 class FreeSlave:
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+
     tasks_filename = 'tasks.dat'
     inactive_process_time_limit = 60
     known_package_types = [MD5HashPackage]
@@ -71,14 +78,14 @@ class FreeSlave:
         return self.last_task_id
 
     def register_to_node(self, node):
-        print('registering to:{}'.format(node))
+        logger.debug('registering to:{}'.format(node))
         connection = client.HTTPConnection(node.ip, node.port)
         other_nodes = []
-        print(len(self.get_other_nodes()))
+        logger.debug(len(self.get_other_nodes()))
         for other_node in self.get_other_nodes():
-            print('enter')
+            logger.debug('enter')
             other_nodes.append(other_node.get_dict())
-        print('other nodes:{}'.format(other_nodes))
+        logger.debug('other nodes:{}'.format(other_nodes))
         for i in range(3):
             connection.request("POST", "/api/nodes", json.dumps({'ip':self.ip, 'port':self.port, 'nodes':other_nodes}))
             response = connection.getresponse()
@@ -98,18 +105,18 @@ class FreeSlave:
             if node.ip == data['ip'] and node.port == data['port']:
                 return False
         self.nodes.append(Node(data))
-        print('Added new node {}:{}'.format(data['ip'], data['port']))
+        logger.debug('Added new node {}:{}'.format(data['ip'], data['port']))
         return True
 
     def add_task(self, task):
         # TODO: make checking global, not specific to md5hashtask
         for item in self.tasks:
             if item.task_id == task.task_id:
-                print('Task with id {} already exists!'.format(task.task_id))
+                logger.debug('Task with id {} already exists!'.format(task.task_id))
                 return False
             if item.target_hash == task.target_hash \
                     and item.max_length >= task.max_length:
-                print('Task with same target_hash and same or greater max_length already exists!')
+                logger.debug('Task with same target_hash and same or greater max_length already exists!')
                 return False
         self.tasks.append(task)
         self.write_tasks()
@@ -139,10 +146,10 @@ class FreeSlave:
     # TODO: this seems to be broken... :EE
     def get_other_nodes(self):
         other_nodes = []
-        print('own ip and port:{}:{}'.format(self.ip, self.port))
+        logger.debug('own ip and port:{}:{}'.format(self.ip, self.port))
         for node in self.nodes:
             if node.ip != self.ip and node.port != self.port:
-                print('enter: {}'.format(node))
+                logger.debug('enter: {}'.format(node))
                 other_nodes.append(node)
         return other_nodes
 
@@ -171,19 +178,19 @@ class FreeSlave:
 
     def start_worker(self):
         if len(self.packages) == 0:
-            print('Empty package list!')
+            logger.debug('Empty package list!')
             return False
 
         if self.get_active_worker_count() >= self._max_workers:
-            print('Max number of workers running already!')
+            logger.debug('Max number of workers running already!')
             return False
 
-        print('Worker count:{}'.format(self.get_active_worker_count()))
+        logger.debug('Worker count:{}'.format(self.get_active_worker_count()))
 
         for package in self.packages:
             if package.last_active is None and package.process_id is None:
                 if type(package) not in FreeSlave.known_package_types:
-                    print('Unknown package type:{}'.format(type(package)))
+                    logger.debug('Unknown package type:{}'.format(type(package)))
                     continue
 
                 package.update_last_active()
@@ -206,16 +213,16 @@ class FreeSlave:
                     # End of worker process code
 
                 return True
-        print('Could not find packages to be started!')
+        logger.debug('Could not find packages to be started!')
         return False
 
     def delegate_packages(self):
         if len(self.tasks) == 0:
-            print('No tasks to delegate!')
+            logger.debug('No tasks to delegate!')
             return False
         packages = self.get_packages(lock_packages=False)
         if packages is None:
-            print('No packages available!')
+            logger.debug('No packages available!')
             return False
         for node in self.nodes:
             if node.ip == self.ip and node.port == self.port:
@@ -236,7 +243,7 @@ class FreeSlave:
                 node.update_last_active()
                 data = json.loads(response.read())
             else:
-                print('something went wong... :(')
+                logger.debug('something went wong... :(')
             #node.request("POST", "/api/processes", json.dumps({'process_id':newpid, 'assigner_ip':package.assigner_ip, 'assigner_port':package.assigner_port, 'task_id':package.task_id, 'package_id':package.package_id}))
 
     @staticmethod
@@ -320,4 +327,4 @@ class FreeSlave:
     # TEST METHODS
     def print_nodes(self):
         for node in self.nodes:
-            print(node)
+            logger.debug(node)

@@ -6,6 +6,11 @@ logger = logging.getLogger(__name__)
 
 
 class Task:
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+
     def __init__(self, task_id, max_length=6):
         self.type = "basetask"
         self.max_length = max_length
@@ -34,7 +39,7 @@ class Task:
     def add_result(self, identifier, data):
         for package in self.packages:
             if package.package_id == identifier:
-                print('correct package found!')  # TODO: implement this
+                logger.debug('correct package found!')  # TODO: implement this
                 return True
         return False
 
