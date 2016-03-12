@@ -51,14 +51,8 @@ class MD5HashTask(Task):
         return superdict
 
     @staticmethod
-    def validate_md5hashtask_data(data):
-        if type(data) is not dict:
-            return False
-        if 'max_length' not in data.keys():
-            return False
-        if type(data['max_length']) is not int:
-            return False
-        if data['max_length'] < 1:
+    def validate_input(data):
+        if not super().validate_input(data):
             return False
         if 'target_hash' not in data.keys():
             return False

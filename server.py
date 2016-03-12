@@ -104,7 +104,7 @@ def main():
     @app.route('/api/tasks', method='POST')
     def add_task():
         data = json.loads(bytes.decode(request.body.read()))
-        if MD5HashTask.validate_md5hashtask_data(data):
+        if MD5HashTask.validate_input(data):
             if fs.add_task(MD5HashTask(
                     ip=config['ip'],
                     port=config['port'],

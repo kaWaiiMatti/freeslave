@@ -43,6 +43,18 @@ class Task:
                 return True
         return False
 
+    @staticmethod
+    def validate_input(data):
+        if type(data) is not dict:
+            return False
+        if 'max_length' not in data.keys():
+            return False
+        if type(data['max_length']) is not int:
+            return False
+        if data['max_length'] < 1:
+            return False
+        return True
+
 
 class TaskPackage:
     def __init__(self, data):
