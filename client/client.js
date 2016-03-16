@@ -8,25 +8,59 @@ $(document).ready(function() {
   $('.navbar-nav > li > a').first().click();
 
   //Set automatic update for task list
-  setInterval(function(){
+  /*setInterval(function(){
      updateTasks();
      updateNodes();
-  }, 3000);
+  }, 3000);*/
   updateTasks();
+
+  $('#submit_new_node').click(function(){
+    postNewNode();
+  });
 
   $('#submit_md5hash').click(function(){
     postMd5HashTask();
   });
 });
 
+function postNewNode() {
+  var data = {
+    'register': true,
+    'nodes': []
+  };
+
+  $.each($('[data-form="new_node"]'), function() {
+    switch (this.type) {
+      case 'number':
+        data[$(this).data('value')] = parseInt($(this).val());
+        break;
+      default:
+        data[$(this).data('value')] = $(this).val();
+    }
+  });
+
+  $.ajax('/api/nodes', {
+    method: 'POST',
+    data: JSON.stringify(data),
+    success: function() {
+      console.log('Successfully registered a new node!');
+    },
+    error: function(){
+      console.log('Failed to register node!');
+    }
+  });
+  console.log(JSON.stringify(data));
+}
+
 function postMd5HashTask() {
   var data = {
     type: 'md5hashtask'
   };
-  $.each($('[data-form="md5hash"]'), function(index, item) {
+
+  $.each($('[data-form="md5hash"]'), function() {
     switch (this.type) {
       case 'number':
-        data[$(this).data('value')] = $(this).val(); //TODO: parse int
+        data[$(this).data('value')] = parseInt($(this).val());
         break;
       default:
         data[$(this).data('value')] = $(this).val();

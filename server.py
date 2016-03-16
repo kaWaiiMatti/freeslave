@@ -20,7 +20,6 @@ def main():
     fs = FreeSlave(config['ip'], config['port'])
 
     app = Bottle(autojson=True)
-    run(app, host=config['ip'], port=config['port'])
 
     @app.route('/')
     def get_client():
@@ -65,8 +64,14 @@ def main():
                 response_nodes.append(known_node.get_dict())
         # ADD REGISTERING NODE
         fs.add_node(data)
-        # LOOP LIST OF RECEIVED NODES AND TRY TO ADD THEM
+        # Add given node to be registered if register parameter is given. This is used when registering a new node from client.
         new_nodes = []
+        try:
+            if data['register'] == True:
+                new_nodes.append(Node(data))
+        except KeyError:
+            pass
+        # LOOP LIST OF RECEIVED NODES AND TRY TO ADD THEM
         for node in data['nodes']:
             if fs.add_node(node):
                 new_nodes.append(Node(node))
@@ -277,8 +282,10 @@ def main():
 
     @app.route('/api/test', method='POST')
     def test():
-        fs.delegate_packages()
-        fs.start_worker()
+        print(bytes.decode(request.body.read()))
+        #print(json.loads(bytes.decode(request.body.read())))
+
+    run(app, host=config['ip'], port=config['port'])
 
 if __name__ == "__main__":
     main()

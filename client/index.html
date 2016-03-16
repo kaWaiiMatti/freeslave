@@ -24,33 +24,17 @@
       </div>
       <div id="navbar" class="navbar-collapse collapse">
         <ul class="nav navbar-nav">
-          <li><a href="#main">Main</a></li>
+          <li><a href="#nodes">Nodes</a></li>
           <li><a href="#md5hash">Md5 hash</a></li>
         </ul>
       </div>
     </div>
   </nav>
   <div id="content" class="container-fluid">
-    <div id="main" class="row">
+    <div id="nodes" class="row">
       <div class="col-xs-12 col-sm-8 col-sm-offset-2">
         <panel panel-default>
-          <table id="tasks" class="table">
-            <thead>
-              <th>Target hash</td>
-              <th>Maximum length</td>
-              <th>Result</td>
-            </thead>
-          </table>
-        </panel>
-        <p>
-          <button id="get_tasks">Get tasks</button>
-        </p>
-      </div>
-    </div>
-    <div id="node" class="row">
-      <div class="col-xs-12 col-sm-8 col-sm-offset-2">
-        <panel panel-default>
-          <table id="nodes" class="table">
+          <table id="nodestable" class="table">
             <thead>
               <th>IP address</td>
               <th>Port</td>
@@ -58,12 +42,35 @@
             </thead>
           </table>
         </panel>
-        <p>
-          <button id="get_nodes">Get tasks</button>
-        </p>
+      </div>
+
+      <div class="col-xs-12 col-sm-8 col-sm-offset-2">
+        <div class="form-group">
+          <label for="ip_address">IP address:</label>
+          <input type="text" class="form-control" data-form="new_node" data-value="ip"/>
+        </div>
+        <div class="form-group">
+          <label for="md5hash_max_length">Port:</label>
+          <input type="number" class="form-control" data-form="new_node" data-value="port"/>
+        </div>
+        <btn id="submit_new_node" class="btn btn-primary pull-right">Register node</button>
       </div>
     </div>
+
+
     <div id="md5hash" class="row">
+      <div class="col-xs-12 col-sm-8 col-sm-offset-2">
+        <panel panel-default>
+          <table id="md5hashtable" class="table">
+            <thead>
+              <th>Target hash</td>
+              <th>Maximum length</td>
+              <th>Result</td>
+            </thead>
+          </table>
+        </panel>
+      </div>
+
       <div class="col-xs-12 col-sm-8 col-sm-offset-2">
         <div class="form-group">
           <label for="md5hash_target_hash">Target MD5 hash:</label>
@@ -75,6 +82,7 @@
         </div>
         <btn id="submit_md5hash" class="btn btn-primary pull-right">Submit task</button>
       </div>
+
     </div>
   </div>
 </body>

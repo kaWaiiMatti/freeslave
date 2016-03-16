@@ -80,7 +80,10 @@ class FreeSlave:
             other_nodes.append(other_node.get_dict())
         print('other nodes:{}'.format(other_nodes))
         for i in range(3):
-            connection.request("POST", "/api/nodes", json.dumps({'ip':self.ip, 'port':self.port, 'nodes':other_nodes}))
+            try:
+                connection.request("POST", "/api/nodes", json.dumps({'ip':self.ip, 'port':self.port, 'nodes':other_nodes}))
+            except ConnectionRefusedError:
+                pass
             response = connection.getresponse()
             if response.status == 200:
                 received_nodes = json.loads(bytes.decode(response.read()))['nodes']
@@ -139,7 +142,7 @@ class FreeSlave:
     # TODO: this seems to be broken... :EE
     def get_other_nodes(self):
         other_nodes = []
-        print('own ip and port:{}:{}'.format(self.ip, self.port))
+        #print('own ip and port:{}:{}'.format(self.ip, self.port))
         for node in self.nodes:
             if node.ip != self.ip and node.port != self.port:
                 print('enter: {}'.format(node))
