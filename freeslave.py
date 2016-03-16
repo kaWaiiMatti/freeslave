@@ -92,7 +92,10 @@ class FreeSlave:
             'nodes': other_nodes
         }
         for i in range(3):
-            response = requests.post(uri, json=payload)
+            try:
+                response = requests.post(uri, json=payload)
+            except requests.exceptions.InvalidSchema:
+                continue
             if response.status_code == 200:
                 received_nodes = response.json()["nodes"]
                 new_nodes = []
