@@ -1,4 +1,5 @@
 import json
+import logging
 
 from bottle import Bottle, run, route, BaseRequest, FormsDict, request, HTTPResponse, static_file
 from freeslave import FreeSlave
@@ -6,8 +7,15 @@ from node import Node
 from base_task import TaskPackage
 from task_md5 import MD5HashTask, MD5HashPackage
 
+logger = logging.getLogger(__name__)
+
 
 def main():
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+
     config = {'ip': 'localhost', 'port': 8080}
     try:
         with open('config.dat', mode='r') as f:
@@ -102,7 +110,7 @@ def main():
     @app.route('/api/tasks', method='POST')
     def add_task():
         data = json.loads(bytes.decode(request.body.read()))
-        if MD5HashTask.validate_md5hashtask_data(data):
+        if MD5HashTask.validate_input(data):
             if fs.add_task(MD5HashTask(
                     ip=config['ip'],
                     port=config['port'],
@@ -118,7 +126,7 @@ def main():
                          'parameters already exists!'
                 )
         for task in fs.tasks:
-            print(task)
+            logger.debug(task)
         return HTTPResponse(status=200)
         # TODO: check if task exists with given parameters.
         # If not, add and start executing
@@ -187,7 +195,7 @@ def main():
         for package in received_packages:
             fs.add_package(package)
         for package in fs.packages:
-            print(package)
+            logger.debug(package)
         # TODO: start working on packages if not max worker amount!
 
     @app.route('/api/packages/<task_id:int>/<package_id:int>', method='POST')
@@ -244,7 +252,9 @@ def main():
             if package == posted_package:
                 package.set_process_id(data['process_id'])
                 package.update_last_active()
-                print('Worker count:{}'.format(fs.get_active_worker_count()))
+                logger.debug(
+                    'Worker count:{}'.format(fs.get_active_worker_count())
+                )
                 return HTTPResponse(status=204)
         return HTTPResponse(
             status=404,
@@ -285,6 +295,11 @@ def main():
         print(bytes.decode(request.body.read()))
         #print(json.loads(bytes.decode(request.body.read())))
 
+    run(app, host=config['ip'], port=config['port'])
+
+    # OK, so this should be at the bottom. I feel so dirty having function
+    # definitions inside main() and then having logic both at the top and
+    # bottom...
     run(app, host=config['ip'], port=config['port'])
 
 if __name__ == "__main__":

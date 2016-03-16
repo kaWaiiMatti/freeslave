@@ -1,12 +1,20 @@
 import hashlib
+import logging
 
 from base_task import Task, TaskPackage
 from string import ascii_letters, digits
 
 ALLOWED_CHARS = ascii_letters + digits
 
+logger = logging.getLogger(__name__)
+
 
 class MD5HashTask(Task):
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+
     package_size = 4
 
     def __init__(self, ip, port, target_hash, task_id,
@@ -43,14 +51,8 @@ class MD5HashTask(Task):
         return superdict
 
     @staticmethod
-    def validate_md5hashtask_data(data):
-        if type(data) is not dict:
-            return False
-        if 'max_length' not in data.keys():
-            return False
-        if type(data['max_length']) is not int:
-            return False
-        if data['max_length'] < 1:
+    def validate_input(data):
+        if not super().validate_input(data):
             return False
         if 'target_hash' not in data.keys():
             return False
@@ -105,28 +107,28 @@ class MD5HashPackage(TaskPackage):
     @staticmethod
     def validate_md5hashpackage_result(data):
         if type(data) is not dict:
-            print('not dict')
+            logger.error('not dict')
             return False
         if 'target_hash' not in data.keys():
-            print('no target_hash')
+            logger.error('no target_hash')
             return False
         if type(data['target_hash']) is not str:
-            print('target_hash not str')
+            logger.error('target_hash not str')
             return False
         if len(data['target_hash']) != 32:
-            print('wrong target_hash length')
+            logger.error('wrong target_hash length')
             return False
         if 'assigner_ip' not in data.keys():
-            print('no assinger_ip')
+            logger.error('no assinger_ip')
             return False
         if type(data['assigner_ip']) is not str:
-            print('assigner_ip not str')
+            logger.error('assigner_ip not str')
             return False
         if len(data['assigner_ip']) < 5:
-            print('too short assigner_ip')
+            logger.error('too short assigner_ip')
             return False
         if 'assigner_port' not in data.keys():
-            print('no assigner_port')
+            logger.error('no assigner_port')
             return False
         if type(data['assigner_port']) is not int:
             return False
