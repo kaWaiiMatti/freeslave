@@ -27,7 +27,7 @@ class Task:
         }
 
         if include_packages:
-            response["packages"] = [p.get_digt() for p in self.packages]
+            response["packages"] = [p.get_dict() for p in self.packages]
 
         return response
 
