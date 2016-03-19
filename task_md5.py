@@ -52,7 +52,9 @@ class MD5HashTask(Task):
 
     @staticmethod
     def validate_input(data):
-        if not super().validate_input(data):
+        # Unbound Super in Python is funny:
+        # http://stackoverflow.com/a/26807879/3529415
+        if not super(MD5HashTask, MD5HashTask).validate_input(data):
             return False
         if 'target_hash' not in data.keys():
             return False
