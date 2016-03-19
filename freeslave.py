@@ -42,7 +42,7 @@ class FreeSlave:
         tasks = []
         for task in self.tasks:
             tasks.append(task.get_dict(include_packages=True))
-        with open(FreeSlave.tasks_filename, "wb") as f:
+        with open(FreeSlave.tasks_filename, "w") as f:
             f.write(json.dumps(
                 {'last_task_id': self.last_task_id, 'tasks': tasks}
             ))
