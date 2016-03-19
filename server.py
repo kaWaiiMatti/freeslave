@@ -72,10 +72,11 @@ def main():
                 response_nodes.append(known_node.get_dict())
         # ADD REGISTERING NODE
         fs.add_node(data)
-        # Add given node to be registered if register parameter is given. This is used when registering a new node from client.
+        # Add given node to be registered if register parameter is given.
+        # This is used when registering a new node from client.
         new_nodes = []
         try:
-            if data['register'] == True:
+            if data['register']:
                 new_nodes.append(Node(data))
         except KeyError:
             pass
@@ -117,7 +118,7 @@ def main():
                     target_hash=data['target_hash'],
                     max_length=data['max_length'],
                     task_id=fs.get_task_id())):
-                # TODO: assign working packages
+                fs.delegate_packages()
                 return HTTPResponse(status=202)
             else:
                 return HTTPResponse(
@@ -125,11 +126,6 @@ def main():
                     body='Task with given id or similar '
                          'parameters already exists!'
                 )
-        for task in fs.tasks:
-            logger.debug(task)
-        return HTTPResponse(status=200)
-        # TODO: check if task exists with given parameters.
-        # If not, add and start executing
 
     @app.route('/api/tasks/<id:int>')
     def get_task(id):
@@ -196,11 +192,13 @@ def main():
             fs.add_package(package)
         for package in fs.packages:
             logger.debug(package)
-        # TODO: start working on packages if not max worker amount!
+        while fs.start_worker():
+            logger.debug("Started worker.")
+        logger.debug("Max worker amount reached.")
 
     @app.route('/api/packages/<task_id:int>/<package_id:int>', method='POST')
     def receive_result(task_id, package_id):
-        data = json.loads(bytes.decode(request.body.rad()))
+        data = json.loads(bytes.decode(request.body.read()))
         if 'type' not in data.keys():
             return HTTPResponse(
                 status=400,
@@ -292,10 +290,8 @@ def main():
 
     @app.route('/api/test', method='POST')
     def test():
-        print(bytes.decode(request.body.read()))
-        #print(json.loads(bytes.decode(request.body.read())))
-
-    run(app, host=config['ip'], port=config['port'])
+        logger.debug(bytes.decode(request.body.read()))
+        # print(json.loads(bytes.decode(request.body.read())))
 
     # OK, so this should be at the bottom. I feel so dirty having function
     # definitions inside main() and then having logic both at the top and
