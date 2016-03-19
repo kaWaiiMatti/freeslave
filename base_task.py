@@ -67,11 +67,12 @@ class TaskPackage:
         except KeyError:
             logger.critical("Malformed initialization data, could not "
                             "initialize TaskPackage!")
-            self.result = ''
-            self.process_id = None
-            self.last_active = None
-            self.assigned_ip = None
-            self.assigned_port = None
+
+        self.result = ''
+        self.process_id = None
+        self.last_active = None
+        self.assigned_ip = None
+        self.assigned_port = None
 
     def __eq__(self, other):
         equals = True
