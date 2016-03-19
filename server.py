@@ -54,7 +54,9 @@ def main():
     @app.route('/api/nodes', method='POST')
     def register_node():
         # Verify data
-        data = json.loads(bytes.decode(request.body.read()))
+        data = parse_request_payload(request)
+        if type(data) == HTTPResponse:
+            return data
         if not Node.validate_node_data(data):
             return HTTPResponse(
                 status=400,
@@ -110,7 +112,9 @@ def main():
 
     @app.route('/api/tasks', method='POST')
     def add_task():
-        data = json.loads(bytes.decode(request.body.read()))
+        data = parse_request_payload(request)
+        if type(data) == HTTPResponse:
+            return data
         if MD5HashTask.validate_input(data):
             if fs.add_task(MD5HashTask(
                     ip=config['ip'],
@@ -166,7 +170,9 @@ def main():
 
     @app.route('/api/packages', method='POST')
     def add_packages():
-        data = json.loads(bytes.decode(request.body.read()))
+        data = parse_request_payload(request)
+        if type(data) == HTTPResponse:
+            return data
         received_packages = []
         for package in data:
             if 'type' not in package.keys():
@@ -198,7 +204,9 @@ def main():
 
     @app.route('/api/packages/<task_id:int>/<package_id:int>', method='POST')
     def receive_result(task_id, package_id):
-        data = json.loads(bytes.decode(request.body.read()))
+        data = parse_request_payload(request)
+        if type(data) == HTTPResponse:
+            return data
         if 'type' not in data.keys():
             return HTTPResponse(
                 status=400,
@@ -237,7 +245,9 @@ def main():
 
     @app.route('/api/processes', method='POST')
     def register_worker():
-        data = json.loads(bytes.decode(request.body.read()))
+        data = parse_request_payload(request)
+        if type(data) == HTTPResponse:
+            return data
         if not FreeSlave.validate_register_worker_data(data):
             return HTTPResponse(
                 status=400,
@@ -291,12 +301,22 @@ def main():
     @app.route('/api/test', method='POST')
     def test():
         logger.debug(bytes.decode(request.body.read()))
-        # print(json.loads(bytes.decode(request.body.read())))
 
     # OK, so this should be at the bottom. I feel so dirty having function
     # definitions inside main() and then having logic both at the top and
     # bottom...
     run(app, host=config['ip'], port=config['port'])
+
+
+def parse_request_payload(r):
+    try:
+        data = json.loads(bytes.decode(r.body.read()))
+    except ValueError:
+        return HTTPResponse(
+            status=400,
+            body="Error parsing request JSON payload."
+        )
+    return data
 
 if __name__ == "__main__":
     main()
