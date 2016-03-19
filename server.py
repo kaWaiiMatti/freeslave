@@ -1,7 +1,7 @@
 import json
 import logging
 
-from bottle import Bottle, run, route, BaseRequest, FormsDict, request, HTTPResponse, static_file
+from bottle import Bottle, run, request, HTTPResponse, static_file
 from freeslave import FreeSlave
 from node import Node
 from base_task import TaskPackage

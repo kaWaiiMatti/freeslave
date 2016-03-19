@@ -3,7 +3,6 @@ import json
 import logging
 import requests
 
-from http import client
 from node import Node
 from task_md5 import MD5HashTask, MD5HashPackage
 from time import time
