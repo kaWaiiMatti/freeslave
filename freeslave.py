@@ -118,11 +118,16 @@ class FreeSlave:
         # TODO: make checking global, not specific to md5hashtask
         for item in self.tasks:
             if item.task_id == task.task_id:
-                logger.debug('Task with id {} already exists!'.format(task.task_id))
+                logger.debug(
+                    'Task with id {} already exists!'.format(task.task_id)
+                )
                 return False
             if item.target_hash == task.target_hash \
                     and item.max_length >= task.max_length:
-                logger.debug('Task with same target_hash and same or greater max_length already exists!')
+                logger.debug(
+                    'Task with same target_hash '
+                    'and same or greater max_length already exists!'
+                )
                 return False
         self.tasks.append(task)
         self.write_tasks()
