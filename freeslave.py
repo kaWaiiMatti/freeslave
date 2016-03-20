@@ -190,11 +190,11 @@ class FreeSlave:
     def start_worker(self):
         if len(self.packages) == 0:
             logger.debug('Empty package list!')
-            return False
+            return 0
 
         if self.get_active_worker_count() >= self._max_workers:
             logger.debug('Max number of workers running already!')
-            return False
+            return 0
 
         logger.debug('Worker count:{}'.format(self.get_active_worker_count()))
 
@@ -231,9 +231,9 @@ class FreeSlave:
 
                     # End of worker process code
 
-                return True
+                return newpid
         logger.debug('Could not find packages to be started!')
-        return False
+        return 0
 
     def delegate_packages(self):
         if len(self.tasks) == 0:
