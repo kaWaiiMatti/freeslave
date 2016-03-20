@@ -21,6 +21,14 @@ $(document).ready(function() {
   $('#submit_md5hash').click(function(){
     postMd5HashTask();
   });
+  
+  $('#refresh_node_list').click(function(){
+    updateNodes();
+  });
+  
+  $('#refresh_task_list').click(function(){
+    updateTasks();
+  });
 });
 
 function postNewNode() {
