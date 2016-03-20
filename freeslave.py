@@ -26,7 +26,8 @@ class FreeSlave:
         self.port = port
 
         self.nodes = []
-        self.nodes.append(Node({'ip': self.ip, 'port': self.port}))
+        self.node = Node({'ip': self.ip, 'port': self.port})
+        self.nodes.append(self.node)
 
         self.last_task_id = 0
         self.tasks = []
@@ -154,12 +155,11 @@ class FreeSlave:
         self.packages.append(package)
         return True
 
-    # TODO: this seems to be broken... :EE
     def get_other_nodes(self):
         other_nodes = []
         logger.debug('own ip and port:{}:{}'.format(self.ip, self.port))
         for node in self.nodes:
-            if node.ip != self.ip and node.port != self.port:
+            if node != self.node:
                 logger.debug('enter: {}'.format(node))
                 other_nodes.append(node)
         return other_nodes
