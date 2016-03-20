@@ -88,7 +88,11 @@ def main():
                 new_nodes.append(Node(node))
         # REGISTER TO NEW NODES
         for node in new_nodes:
-            fs.register_to_node(node)
+            if not fs.register_to_node(node):
+                return HTTPResponse(
+                    status=404,
+                    body="Could not connect to given node."
+                )
         return HTTPResponse(
             status=200,
             body=json.dumps({'nodes': response_nodes})

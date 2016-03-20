@@ -93,9 +93,10 @@ class FreeSlave:
         for i in range(3):
             try:
                 response = requests.post(uri, json=payload)
-            except requests.exceptions.InvalidSchema as e:
-                logger.debug(e)
-                continue
+            except (requests.ConnectionError, requests.HTTPError,
+                    requests.Timeout) as e:
+                logger.debug("Error while connecting to host: {}".format(e))
+                return False
             if response.status_code == 200:
                 received_nodes = response.json()["nodes"]
                 new_nodes = []
@@ -223,7 +224,14 @@ class FreeSlave:
                         'package_id': package.package_id
                     }
                     for i in range(3):
-                        response = requests.post(uri, json=payload)
+                        try:
+                            response = requests.post(uri, json=payload)
+                        except (requests.ConnectionError, requests.HTTPError,
+                                requests.Timeout) as e:
+                            logger.debug(
+                                "Error while connecting to host: {}".format(e)
+                            )
+                            continue
                         if response.status_code == 204:
                             result = package.get_result()
                             os._exit(0)  # Wut?
@@ -269,7 +277,12 @@ class FreeSlave:
                     self.ip, self.port
                 )
             )
-            response = requests.get(uri)
+            try:
+                response = requests.get(uri)
+            except (requests.ConnectionError, requests.HTTPError,
+                    requests.Timeout) as e:
+                logger.debug("Error while connecting to host: {}".format(e))
+                return False
             if response.status_code == 200:
                 node.update_last_active()
                 data = response.json()
@@ -285,7 +298,12 @@ class FreeSlave:
             payload = {
                 "packages": self.convert_to_dict(packages)
             }
-            response = requests.post(uri, json=payload)
+            try:
+                response = requests.post(uri, json=payload)
+            except (requests.ConnectionError, requests.HTTPError,
+                    requests.Timeout) as e:
+                logger.debug("Error while connecting to host: {}".format(e))
+                return False
             if response.status_code == 204:
                 logger.debug(
                     "Packages assigned successfully "
