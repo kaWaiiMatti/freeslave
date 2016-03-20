@@ -96,6 +96,7 @@ class FreeSlave:
             except (requests.ConnectionError, requests.HTTPError,
                     requests.Timeout) as e:
                 logger.debug("Error while connecting to host: {}".format(e))
+                self.remove_node(node)
                 return False
             if response.status_code == 200:
                 received_nodes = response.json()["nodes"]
@@ -118,6 +119,9 @@ class FreeSlave:
             'Added new node {}:{}'.format(new_node.ip, new_node.port)
         )
         return True
+
+    def remove_node(self, removable_node):
+        return self.nodes.remove(removable_node)
 
     def add_task(self, task):
         # TODO: make checking global, not specific to md5hashtask
