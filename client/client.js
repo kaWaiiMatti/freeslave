@@ -67,7 +67,16 @@ function postMd5HashTask() {
     }
   });
   console.log(data);
-  //TODO: do ajax post, get the new task is successful and add to list
+  //TODO: get the new task is successful and add to list
+
+	$.ajax('/api/tasks', {
+    method: 'POST',
+    data: JSON.stringify(data),
+    success: function(xhr) {
+    	console.log("Successful response: " + xhr);
+    }
+  });
+
 }
 
 function updateTasks() {
