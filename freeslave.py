@@ -7,7 +7,7 @@ from node import Node
 from task_md5 import MD5HashTask, MD5HashPackage
 from time import time
 
-CONN_STRING = "http://{}:{}{}"  # ip:port/route
+CONN_STRING = "http://{}:{}{}"  # http://ip:port/route
 logger = logging.getLogger(__name__)
 
 
@@ -78,7 +78,7 @@ class FreeSlave:
         return self.last_task_id
 
     def register_to_node(self, node):
-        logger.debug('registering to:{}'.format(node))
+        logger.debug('registering to: {}'.format(node))
         other_nodes = []
         for other_node in self.get_other_nodes():
             logger.debug('enter')
@@ -161,7 +161,7 @@ class FreeSlave:
 
     def get_other_nodes(self):
         other_nodes = []
-        logger.debug('own ip and port:{}:{}'.format(self.ip, self.port))
+        logger.debug('own ip and port: {}:{}'.format(self.ip, self.port))
         for node in self.nodes:
             if node != self.node:
                 logger.debug('enter: {}'.format(node))
@@ -200,12 +200,14 @@ class FreeSlave:
             logger.debug('Max number of workers running already!')
             return 0
 
-        logger.debug('Worker count:{}'.format(self.get_active_worker_count()))
+        logger.debug('Worker count: {}'.format(self.get_active_worker_count()))
 
         for package in self.packages:
             if package.last_active is None and package.process_id is None:
                 if type(package) not in FreeSlave.known_package_types:
-                    logger.debug('Unknown package type:{}'.format(type(package)))
+                    logger.debug(
+                        'Unknown package type: {}'.format(type(package))
+                    )
                     continue
 
                 package.update_last_active()
