@@ -236,6 +236,7 @@ class FreeSlave:
         return 0
 
     def delegate_packages(self):
+        logger.debug("Assigning packages.")
         if len(self.tasks) == 0:
             logger.debug('No tasks to delegate!')
             return False
@@ -250,9 +251,12 @@ class FreeSlave:
                 if not remaining_buffer:
                     continue
                 packages = self.get_packages(max_count=remaining_buffer)
-                self.set_assigned_to_packages(node=node, packages=packages)
+                self.set_assigned_to_packages(node, packages)
                 for package in packages:
                     self.packages.append(package)
+                logger.debug(
+                    "Successfully assigned packages for self."
+                )
                 continue
 
             # Check if someone else can handle more packages
@@ -267,18 +271,33 @@ class FreeSlave:
                 node.update_last_active()
                 data = response.json()
             else:
+                # TODO: What should we do if server answers something else
+                # than 200 OK?
                 logger.debug('something went wong... :(')
-            """
-            uri = CONN_STRING.format(node.ip, node.port, "/api/process")
+                raise ValueError
+            remaining_buffer = data["available_buffer"]
+            packages = self.get_packages(max_count=remaining_buffer)
+
+            uri = CONN_STRING.format(node.ip, node.port, "/api/packages")
             payload = {
-                'process_id': newpid,
-                'assigner_ip': package.assigner_ip,
-                'assigner_port': package.assigner_port,
-                'task_id': package.task_id,
-                'package_id': package.package_id
+                "packages": self.convert_to_dict(packages)
             }
             response = requests.post(uri, json=payload)
-            """
+            if response.status_code == 204:
+                logger.debug(
+                    "Packages assigned successfully "
+                    "to remote node {}".format(node)
+                )
+                self.set_assigned_to_packages(node, packages)
+                return True
+            else:
+                logger.debug(
+                    "Something went wrong when assigning packages "
+                    "to remote node {}, releasing packages.".format(node)
+                )
+                for package in packages:
+                    package.release()
+                return False
 
     @staticmethod
     def convert_to_dict(convertable):

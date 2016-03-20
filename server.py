@@ -153,7 +153,7 @@ def main():
         if FreeSlave.validate_package_get_request(data):
             # TODO: calculate how many can be assigned to given ip & port
             # (max half of buffer should be assigned to single node!)
-            body = {'accept_packages': fs.get_package_buffer_left()}
+            body = {'available_buffer': fs.get_package_buffer_left()}
             return HTTPResponse(
                 status=200,
                 body=json.dumps(body)
@@ -174,11 +174,16 @@ def main():
         if type(data) == HTTPResponse:
             return data
         received_packages = []
-        for package in data:
+        if "packages" not in data.keys():
+            return HTTPResponse(
+                status=400,
+                body="Invalid payload format"
+            )
+        for package in data["packages"]:
             if 'type' not in package.keys():
                 return HTTPResponse(
                     status=400,
-                    body='No type defined for package:{}'.format(package)
+                    body='No type defined for package: {}'.format(package)
                 )
             if package['type'] == 'md5hashpackage':
                 if MD5HashPackage.validate_md5hashpackage_data(package):
