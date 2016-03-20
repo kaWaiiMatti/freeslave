@@ -66,7 +66,7 @@ class FreeSlave:
                     temp_task.packages.append(MD5HashPackage(package))
                     # TODO: finish this
                 self.add_task(temp_task)
-        except FileNotFoundError:
+        except IOError:
             pass
 
     def get_own_node_data(self):
