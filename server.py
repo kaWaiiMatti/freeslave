@@ -201,6 +201,7 @@ def main():
         while fs.start_worker():
             logger.debug("Started worker.")
         logger.debug("Max worker amount reached.")
+        return HTTPResponse(status=204)
 
     @app.route('/api/packages/<task_id:int>/<package_id:int>', method='POST')
     def receive_result(task_id, package_id):
