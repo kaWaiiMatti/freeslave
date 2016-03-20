@@ -90,10 +90,11 @@ function postMd5HashTask() {
 function updateTasks() {
   $.ajax('/api/tasks', {
     success: function(xhr) {
+    	$('#md5hashtable tr').has('td').remove();
+    
       $.each(xhr, function(index, item) {
         //TODO: alter to change content, rather than clear list and refill?
-        $('#tasks').children('tbody').children('tr').remove();
-        $('#tasks').append($('<tr>')
+        $('#md5hashtable').append($('<tr>')
         .append($('<td>', {text:item.target_hash}))
         .append($('<td>', {text:item.max_length}))
         .append($('<td>', {text:'result are not posted yet...'})));
@@ -105,10 +106,11 @@ function updateTasks() {
 function updateNodes() {
   $.ajax('/api/nodes', {
     success: function(xhr) {
+    	$('#nodestable tr').has('td').remove();
+    	
       $.each(xhr, function(index, item) {
         //TODO: alter to change content, rather than clear list and refill?
-        $('#nodes').children('tbody').children('tr').remove();
-        $('#nodes').append($('<tr>')
+        $('#nodestable').append($('<tr>')
         .append($('<td>', {text:item.ip}))
         .append($('<td>', {text:item.port}))
         .append($('<td>', {text:item.last_active})));
