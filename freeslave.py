@@ -244,6 +244,7 @@ class FreeSlave:
             logger.debug('No packages available!')
             return False
         for node in self.nodes:
+            # Check if we can handle more packages ourselves
             if node.ip == self.ip and node.port == self.port:
                 remaining_buffer = self.get_package_buffer_left()
                 if not remaining_buffer:
@@ -254,6 +255,7 @@ class FreeSlave:
                     self.packages.append(package)
                 continue
 
+            # Check if someone else can handle more packages
             # TODO: finish this and test that it works!
             uri = CONN_STRING.format(
                 node.ip, node.port, "/api/packages/{}/{}".format(
