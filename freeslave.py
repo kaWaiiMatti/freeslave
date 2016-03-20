@@ -321,6 +321,12 @@ class FreeSlave:
                 return True
             else:
                 logger.debug(
+                    "Unexpected status code: {}\n"
+                    "Error message: {}".format(
+                        response.status_code, response.text
+                    )
+                )
+                logger.debug(
                     "Something went wrong when assigning packages "
                     "to remote node {}, releasing packages.".format(node)
                 )
