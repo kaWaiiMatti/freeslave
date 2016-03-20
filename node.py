@@ -16,6 +16,9 @@ class Node:
     def __eq__(self, other):
         return self.ip == other.ip and self.port == other.port
 
+    def __ne__(self, other):
+        return not self == other
+
     def update_last_active(self):
         self.last_active = int(time())
         return True
