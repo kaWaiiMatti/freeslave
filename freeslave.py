@@ -79,11 +79,10 @@ class FreeSlave:
     def register_to_node(self, node):
         logger.debug('registering to:{}'.format(node))
         other_nodes = []
-        logger.debug(len(self.get_other_nodes()))
         for other_node in self.get_other_nodes():
             logger.debug('enter')
             other_nodes.append(other_node.get_dict())
-        logger.debug('other nodes:{}'.format(other_nodes))
+        logger.debug('other nodes: {}'.format(other_nodes))
         uri = CONN_STRING.format(node.ip, node.port, "/api/nodes"),
         payload = {
             'ip': self.ip,
@@ -93,7 +92,8 @@ class FreeSlave:
         for i in range(3):
             try:
                 response = requests.post(uri, json=payload)
-            except requests.exceptions.InvalidSchema:
+            except requests.exceptions.InvalidSchema as e:
+                logger.debug(e)
                 continue
             if response.status_code == 200:
                 received_nodes = response.json()["nodes"]
