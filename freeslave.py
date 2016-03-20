@@ -83,7 +83,7 @@ class FreeSlave:
             logger.debug('enter')
             other_nodes.append(other_node.get_dict())
         logger.debug('other nodes: {}'.format(other_nodes))
-        uri = CONN_STRING.format(node.ip, node.port, "/api/nodes"),
+        uri = CONN_STRING.format(node.ip, node.port, "/api/nodes")
         payload = {
             'ip': self.ip,
             'port': self.port,
