@@ -220,7 +220,9 @@ class FreeSlave:
                 if newpid == 0:
                     # Worker process code
                     uri = CONN_STRING.format(
-                        self.ip, self.port, "/api/processes"
+                        package.assigner_ip,
+                        package.assigner_port,
+                        "/api/processes"
                     )
                     payload = {
                         'process_id': os.getpid(),
