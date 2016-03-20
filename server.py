@@ -187,7 +187,7 @@ def main():
                     return HTTPResponse(
                         status=400,
                         body='Invalid or insufficient parameters '
-                             'for md5hashpackage. Package:{}'.format(package)
+                             'for md5hashpackage. Package: {}'.format(package)
                     )
             else:
                 return HTTPResponse(
@@ -261,7 +261,7 @@ def main():
                 package.set_process_id(data['process_id'])
                 package.update_last_active()
                 logger.debug(
-                    'Worker count:{}'.format(fs.get_active_worker_count())
+                    'Worker count: {}'.format(fs.get_active_worker_count())
                 )
                 return HTTPResponse(status=204)
         return HTTPResponse(
