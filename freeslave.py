@@ -7,7 +7,7 @@ from node import Node
 from task_md5 import MD5HashTask, MD5HashPackage
 from time import time
 
-CONN_STRING = "{}:{}{}"  # ip:port/route
+CONN_STRING = "http://{}:{}{}"  # ip:port/route
 logger = logging.getLogger(__name__)
 
 
