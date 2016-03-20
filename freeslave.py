@@ -240,15 +240,15 @@ class FreeSlave:
             logger.debug('No tasks to delegate!')
             return False
         packages = self.get_packages(lock_packages=False)
-        if packages is None:
+        if not packages:
             logger.debug('No packages available!')
             return False
         for node in self.nodes:
             if node.ip == self.ip and node.port == self.port:
-                buffer = self.get_package_buffer_left()
-                if buffer == 0:
+                remaining_buffer = self.get_package_buffer_left()
+                if not remaining_buffer:
                     continue
-                packages = self.get_packages(max_count=buffer)
+                packages = self.get_packages(max_count=remaining_buffer)
                 self.set_assigned_to_packages(node=node, packages=packages)
                 for package in packages:
                     self.packages.append(package)
@@ -309,10 +309,11 @@ class FreeSlave:
                         )
                     packages.append(package)
                     if len(packages) >= max_count:
-                        return packages
+                        break
             if len(packages) > 0:
-                return packages
-        return None
+                break
+
+        return packages
 
     @staticmethod
     def validate_package_get_request(data):
