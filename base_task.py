@@ -63,6 +63,7 @@ class TaskPackage:
             self.assigner_ip = data["assigner_ip"]
             self.assigner_port = data["assigner_port"]
             self.task_id = data["task_id"]
+            self.type = data["type"]
         except KeyError:
             logger.critical("Malformed initialization data, could not "
                             "initialize TaskPackage!")
@@ -73,7 +74,6 @@ class TaskPackage:
         self.last_active = None
         self.assigned_ip = None
         self.assigned_port = None
-        self.type = "Base"
 
     def __eq__(self, other):
         equals = True

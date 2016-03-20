@@ -229,7 +229,8 @@ class FreeSlave:
                         'assigner_ip': package.assigner_ip,
                         'assigner_port': package.assigner_port,
                         'task_id': package.task_id,
-                        'package_id': package.package_id
+                        'package_id': package.package_id,
+                        'type': package.type
                     }
                     for i in range(3):
                         try:
