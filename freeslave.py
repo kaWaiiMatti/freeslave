@@ -108,11 +108,14 @@ class FreeSlave:
         return False
 
     def add_node(self, data):
+        new_node = Node(data)
         for node in self.nodes:
-            if node.ip == data['ip'] and node.port == data['port']:
+            if node == new_node:
                 return False
-        self.nodes.append(Node(data))
-        logger.debug('Added new node {}:{}'.format(data['ip'], data['port']))
+        self.nodes.append(new_node)
+        logger.debug(
+            'Added new node {}:{}'.format(new_node.ip, new_node.port)
+        )
         return True
 
     def add_task(self, task):
@@ -246,7 +249,7 @@ class FreeSlave:
             return False
         for node in self.nodes:
             # Check if we can handle more packages ourselves
-            if node.ip == self.ip and node.port == self.port:
+            if node == self.node:
                 remaining_buffer = self.get_package_buffer_left()
                 if not remaining_buffer:
                     continue
