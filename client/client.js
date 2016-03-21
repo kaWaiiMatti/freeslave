@@ -13,6 +13,7 @@ $(document).ready(function() {
      updateNodes();
   }, 3000);*/
   updateTasks();
+  updateNodes();
 
   $('#submit_new_node').click(function(){
     postNewNode();
