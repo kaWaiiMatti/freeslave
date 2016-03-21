@@ -235,6 +235,10 @@ class FreeSlave:
                     for i in range(3):
                         try:
                             response = requests.post(uri, json=payload)
+                            # TODO: Find out why this always returns 404
+                            # Either we send crap, store the packages
+                            # incorrectly or the package comparison is
+                            # broken. Probably the last one…
                         except (requests.ConnectionError, requests.HTTPError,
                                 requests.Timeout) as e:
                             logger.debug(
@@ -243,7 +247,7 @@ class FreeSlave:
                             continue
                         if response.status_code == 204:
                             result = package.get_result()
-                            os._exit(0)  # Wut?
+                            os._exit(0)
 
                     # TODO: package.get_result()
                     # TODO: post result to assigner
