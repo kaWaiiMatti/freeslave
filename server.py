@@ -62,16 +62,21 @@ def main():
                 status=400,
                 body=json.dumps({'error': 'Invalid node information.'})
             )
-        # Create known nodes response
+
+        registering_node = Node(data)
+
+        # Create list of received nodes
+        received_nodes = []
+        for node in data['nodes']:
+            received_nodes.append(Node(node))
+
+        # Create a response that has all the nodes that this node knows but which were not in the received list and is
+        # not the registering node.
         response_nodes = []
         for known_node in fs.get_other_nodes():
-            known = False
-            for node in data['nodes']:
-                if Node(node) == known_node:
-                    known = True
-                    break
-            if not known:
+            if known_node not in received_nodes and known_node is not registering_node:
                 response_nodes.append(known_node.get_dict())
+
         # ADD REGISTERING NODE
         fs.add_node(data)
         # Add given node to be registered if register parameter is given.
@@ -79,7 +84,7 @@ def main():
         new_nodes = []
         try:
             if data['register']:
-                new_nodes.append(Node(data))
+                new_nodes.append(registering_node)
         except KeyError:
             pass
         # LOOP LIST OF RECEIVED NODES AND TRY TO ADD THEM
