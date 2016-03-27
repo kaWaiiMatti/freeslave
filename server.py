@@ -318,6 +318,9 @@ def main():
     def test():
         logger.debug(bytes.decode(request.body.read()))
 
+    # Delegate packages before start
+    fs.delegate_packages()
+
     # OK, so this should be at the bottom. I feel so dirty having function
     # definitions inside main() and then having logic both at the top and
     # bottom...
