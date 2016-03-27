@@ -212,11 +212,12 @@ def main():
         logger.debug("Max worker amount reached.")
         return HTTPResponse(status=204)
 
-    @app.route('/api/packages/<task_id:int>/<package_id:int>', method='POST')
-    def receive_result(task_id, package_id):
+    @app.route('/api/packages/result', method='POST')
+    def receive_result():
         data = parse_request_payload(request)
         if type(data) == HTTPResponse:
             return data
+        logger.debug('result:{}'.format(data))
         if 'type' not in data.keys():
             return HTTPResponse(
                 status=400,
@@ -244,8 +245,8 @@ def main():
                 body=json.dumps({'error': 'Unknown package type!'})
             )
         for task in fs.tasks:
-            if task_id == task.task_id:
-                task.add_result(identifier=package_id, data=data)
+            if data['task_id'] == task.task_id:
+                task.add_result(identifier=data['package_id'], data=data)
                 return HTTPResponse(status=200)
 
         return HTTPResponse(

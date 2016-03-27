@@ -148,7 +148,7 @@ class FreeSlave:
                 self.tasks.remove(task)
                 self.write_tasks()
                 for package in self.packages:
-                    if package.related_task == task_id:
+                    if package.task_id == task_id:
                         self.packages.remove(package)
                 return True
         return False
@@ -219,6 +219,8 @@ class FreeSlave:
                 newpid = os.fork()
                 if newpid == 0:
                     # Worker process code
+
+                    # Register worker
                     uri = CONN_STRING.format(
                         package.assigner_ip,
                         package.assigner_port,
@@ -235,19 +237,54 @@ class FreeSlave:
                     for i in range(3):
                         try:
                             response = requests.post(uri, json=payload)
-                            # TODO: Find out why this always returns 404
-                            # Either we send crap, store the packages
-                            # incorrectly or the package comparison is
-                            # broken. Probably the last one…
                         except (requests.ConnectionError, requests.HTTPError,
                                 requests.Timeout) as e:
                             logger.debug(
                                 "Error while connecting to host: {}".format(e)
                             )
+                            if i == 2:
+                                os._exit(0)
                             continue
+                        # Worker successfully registered
                         if response.status_code == 204:
+                            # Calculate the result for package
                             result = package.get_result()
-                            os._exit(0)
+
+                            # Post result
+                            uri = CONN_STRING.format(
+                                package.assigner_ip,
+                                package.assigner_port,
+                                '/api/packages/result'
+                            )
+                            payload = package.get_dict()
+                            payload['result'] = result
+
+                            for i in range(3):
+                                try:
+                                    response = requests.post(uri, json=payload)
+                                except (requests.ConnectionError, requests.HTTPError,
+                                        requests.Timeout) as e:
+                                    logger.debug("Error while connecting to host: {}".format(e))
+                                    if i == 2:
+                                        os._exit(0)
+                                    continue
+                                # Result successfully posted
+                                if response.status_code == 200:
+                                    uri = CONN_STRING.format(
+                                        package.assigner_ip,
+                                        package.assigner_port,
+                                        '/api/processes/{}'.format(os.getpid())
+                                    )
+                                    # Unregister worker
+                                    for i in range(3):
+                                        try:
+                                            response = requests.delete(uri)
+                                        except (requests.ConnectionError, requests.HTTPError, requests.Timeout) as e:
+                                            logger.debug("Error while connecting to host: {}".format(e))
+                                            if i == 2:
+                                                os._exit(0)
+                                            continue
+                                        os._exit(0)
 
                     # TODO: package.get_result()
                     # TODO: post result to assigner
@@ -261,14 +298,17 @@ class FreeSlave:
 
     def delegate_packages(self):
         logger.debug("Assigning packages.")
+        # Verify that we have existing tasks.
         if len(self.tasks) == 0:
             logger.debug('No tasks to delegate!')
             return False
-        packages = self.get_packages(lock_packages=False)
-        if not packages:
-            logger.debug('No packages available!')
-            return False
+        # Loop through all the nodes to delegate packages
         for node in self.nodes:
+            # Verify that we have packages that can be delegated.
+            packages = self.get_packages(lock_packages=False)
+            if not packages:
+                logger.debug('No packages available!')
+                return False
             # Check if we can handle more packages ourselves
             if node == self.node:
                 remaining_buffer = self.get_package_buffer_left()
