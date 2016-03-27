@@ -79,9 +79,9 @@ class TaskPackage:
         equals = True
 
         # Make sure the objects are same type
-        if type(self) != type(other):
-            equals = False
-        elif self.type != other.type:
+        #if type(self) != type(other):
+        #    equals = False
+        if self.type != other.type:
             equals = False
         elif self.assigner_ip != other.assigner_ip:
             equals = False
