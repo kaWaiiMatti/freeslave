@@ -1,3 +1,10 @@
 .container-fluid > .row {
-  display: none;
+    display: none;
+}
+
+#md5hashtable > tbody > tr > td:nth-child(4) {
+    color: red;
+    cursor: pointer;
+    font-weight: bold;
+    width: 25px;
 }

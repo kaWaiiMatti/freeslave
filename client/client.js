@@ -30,7 +30,25 @@ $(document).ready(function() {
   $('#refresh_task_list').click(function(){
     updateTasks();
   });
+
+    $('#md5hashtable').on('click', 'tbody > tr > td:nth-child(4)', null, function() {
+        deleteTask(this);
+    });
 });
+
+function deleteTask(element) {
+    var taskId = parseInt($(element).data('taskId'));
+
+    $.ajax('/api/tasks/' + taskId, {
+        method: 'DELETE',
+        success: function(data, status, xhr) {
+            if(xhr.status === 204) {
+                console.log('Successfully deleted a task!');
+                $(element).parent().remove();
+            }
+        }
+    });
+}
 
 function postNewNode() {
   var data = {
@@ -98,7 +116,8 @@ function updateTasks() {
         $('#md5hashtable').append($('<tr>')
         .append($('<td>', {text:item.target_hash}))
         .append($('<td>', {text:item.max_length}))
-        .append($('<td>', {text:'result are not posted yet...'})));
+        .append($('<td>', {text:item.result}))
+        .append($('<td>', {text:'X', 'data-task-id': item.task_id})));
       });
     }
   });
