@@ -18,8 +18,8 @@ class MD5HashTask(Task):
     package_size = 4
 
     def __init__(self, ip, port, target_hash, task_id,
-                 max_length=6, result='', create_packages=True):
-        super().__init__(task_id, max_length, result)
+                 max_length=6, result='', stop_at_first_result=True, create_packages=True):
+        super().__init__(task_id, max_length, result, stop_at_first_result)
         self.type = "md5hashtask"
         self.target_hash = target_hash
 

@@ -11,12 +11,13 @@ class Task:
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     )
 
-    def __init__(self, task_id, max_length=6, result=''):
+    def __init__(self, task_id, max_length=6, result='', stop_at_first_result=True):
         self.type = "basetask"
         self.max_length = max_length
         self.task_id = task_id
         self.packages = []
         self.result = ""
+        self.stop_at_first_result = stop_at_first_result
 
     def __str__(self):
         return "task_id: {}, max_length: {}".format(
@@ -43,6 +44,8 @@ class Task:
                 self.packages.remove(package)
                 if data['result'] is not None:
                     self.result = data['result'] if (self.result is None or len(self.result) == 0) else '{}, {}'.format(self.result, data['result'])
+                if self.stop_at_first_result:
+                    self.packages = []
                 return True
         return False
 

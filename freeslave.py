@@ -85,6 +85,11 @@ class FreeSlave:
         self.last_task_id += 1
         return self.last_task_id
 
+    def remove_working_packages(self, task_id):
+        for package in self.packages:
+            if package.assigner_ip == self.ip and package.assigner_port == self.port and package.task_id == task_id and package.process_id is None:
+                self.packages.remove(package)
+
     def register_to_node(self, node):
         logger.debug('registering to: {}'.format(node))
         other_nodes = []
@@ -323,9 +328,8 @@ class FreeSlave:
                 self.set_assigned_to_packages(node, packages)
                 for package in packages:
                     self.packages.append(package)
-                logger.debug(
-                    "Successfully assigned packages for self."
-                )
+                logger.debug("Successfully assigned packages for self.")
+                self.start_worker()
                 continue
 
             # Check if someone else can handle more packages

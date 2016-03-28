@@ -262,10 +262,13 @@ def main():
         fs.results_since_delegate += 1
         if fs.results_since_delegate >= fs.delegate_packages_threshold:
             fs.delegate_packages()
-
+        # TODO: DOES NOT STORE THE RESULT FOR SOME REASON
         for task in fs.tasks:
             if data['task_id'] == task.task_id:
                 if task.add_result(identifier=data['package_id'], data=data):
+                    logger.debug('result data:{}'.format(data))
+                    if task.result is not None and len(task.result) > 0 and task.stop_at_first_result:
+                        fs.remove_working_packages(task.task_id)
                     #TODO: share result to other nodes
                     fs.write_tasks()
                 return HTTPResponse(status=200)
@@ -292,9 +295,8 @@ def main():
             if package == posted_package:
                 package.set_process_id(data['process_id'])
                 package.update_last_active()
-                logger.debug(
-                    'Worker count: {}'.format(fs.get_active_worker_count())
-                )
+                logger.debug('Worker:{}'.format(package))
+                logger.debug('Worker count: {}'.format(fs.get_active_worker_count()))
                 return HTTPResponse(status=204)
         return HTTPResponse(
             status=404,
