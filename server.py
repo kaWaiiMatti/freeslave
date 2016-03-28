@@ -160,9 +160,13 @@ def main():
     def accept_packages(ip, port):
         data = {'ip': ip, 'port': port}
         if FreeSlave.validate_package_get_request(data):
-            # TODO: calculate how many can be assigned to given ip & port
-            # (max half of buffer should be assigned to single node!)
-            body = {'available_buffer': fs.get_package_buffer_left()}
+            # Max half of buffer should be assigned to single node
+            count = 0
+            for package in fs.packages:
+                if package.assigner_ip == ip and package.assigner_port == port:
+                    count += 1
+            result = min([int(fs._max_packages/2)-count, fs.get_package_buffer_left()])
+            body = {'available_buffer': result}
             return HTTPResponse(
                 status=200,
                 body=json.dumps(body)
@@ -228,8 +232,8 @@ def main():
                 status=400,
                 body=json.dumps({'error': 'Type is not defined!'})
             )
-            # TODO: check if task_id is valid, check if package id is valid,
-            # check if does not have response and then add result, response 200
+
+        # TODO: make generic validator?
         if data['type'] == 'md5hashpackage':
             if not MD5HashPackage.validate_md5hashpackage_result(data):
                 return HTTPResponse(
@@ -249,9 +253,16 @@ def main():
                 status=400,
                 body=json.dumps({'error': 'Unknown package type!'})
             )
+
+        # Delegate packages when certain amount of results have been received
+        fs.results_since_delegate += 1
+        if fs.results_since_delegate >= fs.delegate_packages_threshold:
+            fs.delegate_packages()
+
         for task in fs.tasks:
             if data['task_id'] == task.task_id:
                 if task.add_result(identifier=data['package_id'], data=data):
+                    #TODO: share result to other nodes
                     fs.write_tasks()
                 return HTTPResponse(status=200)
 

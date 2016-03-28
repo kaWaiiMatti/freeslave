@@ -33,9 +33,12 @@ class FreeSlave:
         self.tasks = []
 
         self.packages = []
-        self._max_packages = 10  # TODO: determine value for this
+        self._max_packages = 10
 
         self._max_workers = 1
+
+        self.results_since_delegate = 0
+        self.delegate_packages_threshold = 3
 
         self.load_tasks()
 
@@ -299,6 +302,8 @@ class FreeSlave:
 
     def delegate_packages(self):
         logger.debug("Assigning packages.")
+        # Reset results since delegate
+        self.results_since_delegate = 0
         # Verify that we have existing tasks.
         if len(self.tasks) == 0:
             logger.debug('No tasks to delegate!')
