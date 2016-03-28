@@ -99,8 +99,8 @@ function postMd5HashTask() {
 	$.ajax('/api/tasks', {
     method: 'POST',
     data: JSON.stringify(data),
-    success: function(xhr) {
-    	console.log("Successful response: " + xhr);
+    success: function() {
+      updateTasks();
     }
   });
 
