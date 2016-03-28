@@ -58,18 +58,23 @@ class FreeSlave:
             f.close()
             self.last_task_id = data['last_task_id']
             for task in data['tasks']:
-                temp_task = MD5HashTask(
-                    ip=self.ip,
-                    port=self.port,
-                    target_hash=task['target_hash'],
-                    task_id=task['task_id'],
-                    max_length=task['max_length'],
-                    create_packages=False
-                )
-                for package in task['packages']:
-                    temp_task.packages.append(MD5HashPackage(package))
-                    # TODO: finish this
-                self.add_task(temp_task)
+                if task['type'] == 'md5hashtask':
+                    temp_task = MD5HashTask(
+                        ip=self.ip,
+                        port=self.port,
+                        target_hash=task['target_hash'],
+                        task_id=task['task_id'],
+                        max_length=task['max_length'],
+                        result=task['result'],
+                        create_packages=False
+                    )
+                    for package in task['packages']:
+                        temp_task.packages.append(MD5HashPackage(package))
+                    self.add_task(temp_task)
+                # implement other task types here
+                else:
+                    logger.error("Trying to load invalid task type!")
+                    continue
         except IOError:
             pass
 

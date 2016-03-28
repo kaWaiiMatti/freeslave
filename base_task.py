@@ -11,7 +11,7 @@ class Task:
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     )
 
-    def __init__(self, task_id, max_length=6):
+    def __init__(self, task_id, max_length=6, result=''):
         self.type = "basetask"
         self.max_length = max_length
         self.task_id = task_id
@@ -29,6 +29,7 @@ class Task:
             "task_id": self.task_id,
             "result": self.result,
             "max_length": self.max_length,
+            "type": self.type
         }
 
         if include_packages:
@@ -39,7 +40,6 @@ class Task:
     def add_result(self, identifier, data):
         for package in self.packages:
             if package.package_id == identifier:
-                logger.debug('correct package found!')
                 self.packages.remove(package)
                 if data['result'] is not None:
                     self.result = data['result'] if (self.result is None or len(self.result) == 0) else '{}, {}'.format(self.result, data['result'])
