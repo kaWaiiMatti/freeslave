@@ -39,7 +39,10 @@ class Task:
     def add_result(self, identifier, data):
         for package in self.packages:
             if package.package_id == identifier:
-                logger.debug('correct package found!')  # TODO: implement this
+                logger.debug('correct package found!')
+                self.packages.remove(package)
+                if data['result'] is not None:
+                    self.result = data['result'] if (self.result is None or len(self.result) == 0) else '{}, {}'.format(self.result, data['result'])
                 return True
         return False
 

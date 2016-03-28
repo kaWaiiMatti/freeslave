@@ -251,7 +251,8 @@ def main():
             )
         for task in fs.tasks:
             if data['task_id'] == task.task_id:
-                task.add_result(identifier=data['package_id'], data=data)
+                if task.add_result(identifier=data['package_id'], data=data):
+                    fs.write_tasks()
                 return HTTPResponse(status=200)
 
         return HTTPResponse(
@@ -305,6 +306,8 @@ def main():
         for package in fs.packages:
             if package.process_id == process_id:
                 fs.packages.remove(package)
+                logger.debug('{} packages left'.format(len(fs.packages)))
+                fs.start_worker()
                 return HTTPResponse(status=204)
 
         return HTTPResponse(
@@ -320,6 +323,7 @@ def main():
 
     # Delegate packages before start
     fs.delegate_packages()
+    fs.start_worker()
 
     # OK, so this should be at the bottom. I feel so dirty having function
     # definitions inside main() and then having logic both at the top and

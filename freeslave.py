@@ -5,7 +5,7 @@ import requests
 
 from node import Node
 from task_md5 import MD5HashTask, MD5HashPackage
-from time import time
+from time import time, sleep
 
 CONN_STRING = "http://{}:{}{}"  # http://ip:port/route
 logger = logging.getLogger(__name__)
@@ -244,6 +244,7 @@ class FreeSlave:
                             )
                             if i == 2:
                                 os._exit(0)
+                            sleep(0.05)
                             continue
                         # Worker successfully registered
                         if response.status_code == 204:
