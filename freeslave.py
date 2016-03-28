@@ -156,16 +156,10 @@ class FreeSlave:
                 self.tasks.remove(task)
                 self.write_tasks()
                 for package in self.packages:
-                    if package.task_id == task_id:
+                    if package.task_id == task_id and package.process_id is None:
                         self.packages.remove(package)
                 return True
         return False
-
-    def add_result(self, data):
-        # TODO: check if task id and others match and add result
-        # TODO: remove not found result from task from the beginning
-        self.write_tasks()
-        return True
 
     def add_package(self, package):
         self.packages.append(package)
