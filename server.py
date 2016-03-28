@@ -153,6 +153,10 @@ def main():
     @app.route('/api/tasks/<id:int>', method='DELETE')
     def delete_task(id):
         if fs.remove_task(id):
+            # Remove related packages from assigned packages list
+            for package in fs.packages:
+                if package.assigner_ip == config['ip'] and package.assigner_port == config['port'] and package.task_id == id:
+                    fs.packages.remove(package)
             return HTTPResponse(status=204)
         return HTTPResponse(status=404)
 
