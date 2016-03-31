@@ -266,7 +266,6 @@ def main():
         for task in fs.tasks:
             if data['task_id'] == task.task_id:
                 if task.add_result(identifier=data['package_id'], data=data):
-                    logger.debug('result data:{}'.format(data))
                     if task.result is not None and len(task.result) > 0 and task.stop_at_first_result:
                         fs.remove_working_packages(task.task_id)
                     #TODO: share result to other nodes

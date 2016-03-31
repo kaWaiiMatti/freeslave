@@ -44,8 +44,8 @@ class Task:
                 self.packages.remove(package)
                 if data['result'] is not None:
                     self.result = data['result'] if (self.result is None or len(self.result) == 0) else '{}, {}'.format(self.result, data['result'])
-                if self.stop_at_first_result:
-                    self.packages = []
+                    if self.stop_at_first_result:
+                        self.packages = []
                 return True
         return False
 

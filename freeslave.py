@@ -293,11 +293,9 @@ class FreeSlave:
                                                 os._exit(0)
                                             continue
                                         os._exit(0)
-
-                    # TODO: package.get_result()
-                    # TODO: post result to assigner
-                    # TODO: unregister process
-
+                                elif response.status_code == 404:
+                                    #TODO: remove working packages with same assigner_ip, assigner_port and task_id from working packages
+                                    os._exit(0)
                     # End of worker process code
 
                 return newpid
