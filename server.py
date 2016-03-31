@@ -225,6 +225,20 @@ def main():
         logger.debug("Max worker amount reached.")
         return HTTPResponse(status=204)
 
+
+    #TODO: does not find all the packages for some reason
+    @app.route('/api/packages/<ip>/<port:int>/<task_id:int>', method='DELETE')
+    def remove_working_packages(ip, port, task_id):
+        logger.debug('removing packages')
+        for package in fs.packages:
+            logger.debug('address:{}:{}, task_id:{}'.format(package.assigner_ip, package.assigner_port, package.task_id))
+            if package.assigner_ip == ip and package.assigner_port == port and package.task_id == task_id and package.process_id is None:
+                logger.debug('REMOVEE')
+                fs.packages.remove(package)
+        return HTTPResponse(
+            status=204
+        )
+
     @app.route('/api/packages/result', method='POST')
     def receive_result():
         data = parse_request_payload(request)
@@ -262,12 +276,13 @@ def main():
         fs.results_since_delegate += 1
         if fs.results_since_delegate >= fs.delegate_packages_threshold:
             fs.delegate_packages()
-        # TODO: DOES NOT STORE THE RESULT FOR SOME REASON
         for task in fs.tasks:
             if data['task_id'] == task.task_id:
                 if task.add_result(identifier=data['package_id'], data=data):
                     if task.result is not None and len(task.result) > 0 and task.stop_at_first_result:
                         fs.remove_working_packages(task.task_id)
+                        fs.write_tasks()
+                        return HTTPResponse(status=204)
                     #TODO: share result to other nodes
                     fs.write_tasks()
                 return HTTPResponse(status=200)

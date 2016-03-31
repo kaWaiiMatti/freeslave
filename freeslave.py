@@ -279,8 +279,8 @@ class FreeSlave:
                                 # Result successfully posted
                                 if response.status_code == 200:
                                     uri = CONN_STRING.format(
-                                        package.assigner_ip,
-                                        package.assigner_port,
+                                        self.ip,
+                                        self.port,
                                         '/api/processes/{}'.format(os.getpid())
                                     )
                                     # Unregister worker
@@ -293,8 +293,34 @@ class FreeSlave:
                                                 os._exit(0)
                                             continue
                                         os._exit(0)
-                                elif response.status_code == 404:
-                                    #TODO: remove working packages with same assigner_ip, assigner_port and task_id from working packages
+                                elif response.status_code == 204 or response.status_code == 404:
+                                    uri = CONN_STRING.format(
+                                        self.ip,
+                                        self.port,
+                                        '/api/packages/{}/{}/{}'.format(package.assigner_ip, package.assigner_port, package.task_id)
+                                    )
+                                    # Remove working packages from queue because assigner does not have such task anymore
+                                    for i in range(3):
+                                        try:
+                                            response = requests.delete(uri)
+                                            if response.status_code == 204:
+                                                break
+                                        except (requests.ConnectionError, requests.HTTPError, requests.Timeout) as e:
+                                            logger.debug("Error while connecting to host: {}".format(e))
+                                            continue
+                                    # Unregister worker
+                                    uri = CONN_STRING.format(
+                                        self.ip,
+                                        self.port,
+                                        '/api/processes/{}'.format(os.getpid())
+                                    )
+                                    for i in range(3):
+                                        try:
+                                            response = requests.delete(uri)
+                                            if response.status_code == 204:
+                                                break
+                                        except (requests.ConnectionError, requests.HTTPError, requests.Timeout) as e:
+                                            logger.debug("Error while connecting to host: {}".format(e))
                                     os._exit(0)
                     # End of worker process code
 
