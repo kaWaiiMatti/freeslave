@@ -16,7 +16,7 @@ class Task:
         self.max_length = max_length
         self.task_id = task_id
         self.packages = []
-        self.result = ""
+        self.result = result
         self.stop_at_first_result = stop_at_first_result
 
     def __str__(self):

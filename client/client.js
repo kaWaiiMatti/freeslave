@@ -110,7 +110,7 @@ function updateTasks() {
   $.ajax('/api/tasks', {
     success: function(xhr) {
     	$('#md5hashtable tr').has('td').remove();
-    
+
       $.each(xhr, function(index, item) {
         //TODO: alter to change content, rather than clear list and refill?
         $('#md5hashtable').append($('<tr>')
