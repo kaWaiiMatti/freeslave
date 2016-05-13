@@ -229,8 +229,8 @@ class FreeSlave:
 
                     # Register worker
                     uri = CONN_STRING.format(
-                        package.assigner_ip,
-                        package.assigner_port,
+                        self.ip,
+                        self.port,
                         "/api/processes"
                     )
                     payload = {
