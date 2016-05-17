@@ -11,6 +11,7 @@ CONN_STRING = "http://{}:{}{}"  # http://ip:port/route
 logger = logging.getLogger(__name__)
 
 
+# Class that contains the application methods
 class FreeSlave:
     logging.basicConfig(
         level=logging.DEBUG,
@@ -20,28 +21,34 @@ class FreeSlave:
     tasks_filename = 'tasks.dat'
     inactive_process_time_limit = 60
     known_package_types = [MD5HashPackage]
-
     def __init__(self, ip, port):
+
+        # own node information
         self.ip = ip
         self.port = port
 
+        # other nodes
         self.nodes = []
         self.node = Node({'ip': self.ip, 'port': self.port})
         self.nodes.append(self.node)
 
+        # keep track of tasks
         self.last_task_id = 0
         self.tasks = []
 
+        # working package information
         self.packages = []
-        self._max_packages = 10
+        self._max_packages = 5
 
         self._max_workers = 1
 
+        # working package delegation configuration
         self.results_since_delegate = 0
         self.delegate_packages_threshold = 3
 
         self.load_tasks()
 
+    # write tasks to file
     def write_tasks(self):
         tasks = []
         for task in self.tasks:
@@ -51,6 +58,7 @@ class FreeSlave:
                 {'last_task_id': self.last_task_id, 'tasks': tasks}
             ))
 
+    # load tasks from file
     def load_tasks(self):
         try:
             f = open(FreeSlave.tasks_filename, 'r')
@@ -85,11 +93,15 @@ class FreeSlave:
         self.last_task_id += 1
         return self.last_task_id
 
+    # remove working packages from execution with given task id
     def remove_working_packages(self, task_id):
         for package in self.packages:
             if package.assigner_ip == self.ip and package.assigner_port == self.port and package.task_id == task_id and package.process_id is None:
                 self.packages.remove(package)
 
+    # register to another node
+    # send information of known nodes
+    # receive information of other nodes
     def register_to_node(self, node):
         logger.debug('registering to: {}'.format(node))
         other_nodes = []
@@ -122,6 +134,7 @@ class FreeSlave:
                 return True
         return False
 
+    # add new node to nodes if it does not exist already
     def add_node(self, data):
         new_node = Node(data)
         for node in self.nodes:
@@ -136,8 +149,8 @@ class FreeSlave:
     def remove_node(self, removable_node):
         return self.nodes.remove(removable_node)
 
+    # add new task and write tasks to file
     def add_task(self, task):
-        # TODO: make checking global, not specific to md5hashtask
         for item in self.tasks:
             if item.task_id == task.task_id:
                 logger.debug(
@@ -155,6 +168,8 @@ class FreeSlave:
         self.write_tasks()
         return True
 
+    # remove task with given id and write tasks to file
+    # remove working packages with given task id
     def remove_task(self, task_id):
         for task in self.tasks:
             if task.task_id == task_id:
@@ -166,10 +181,12 @@ class FreeSlave:
                 return True
         return False
 
+    # add new working package to execution queue
     def add_package(self, package):
         self.packages.append(package)
         return True
 
+    # return list of known nodes
     def get_other_nodes(self):
         other_nodes = []
         logger.debug('own ip and port: {}:{}'.format(self.ip, self.port))
@@ -179,6 +196,7 @@ class FreeSlave:
                 other_nodes.append(node)
         return other_nodes
 
+    # calculate and return how many working packages can be accepted
     def get_package_buffer_left(self):
         if len(self.packages) < self._max_packages:
             buffer_len = self._max_packages - len(self.packages)
@@ -202,18 +220,19 @@ class FreeSlave:
 
         return count
 
+    # start new worker
     def start_worker(self):
-        if len(self.packages) == 0:
+        if len(self.packages) == 0: # no working packages on queue
             logger.debug('Empty package list!')
             return 0
 
-        if self.get_active_worker_count() >= self._max_workers:
+        if self.get_active_worker_count() >= self._max_workers: # max number of workers already running
             logger.debug('Max number of workers running already!')
             return 0
 
         logger.debug('Worker count: {}'.format(self.get_active_worker_count()))
 
-        for package in self.packages:
+        for package in self.packages: #find next working package that is not under execution
             if package.last_active is None and package.process_id is None:
                 if type(package) not in FreeSlave.known_package_types:
                     logger.debug(
@@ -328,6 +347,7 @@ class FreeSlave:
         logger.debug('Could not find packages to be started!')
         return 0
 
+    # Delegate working packages to nodes
     def delegate_packages(self):
         logger.debug("Assigning packages.")
         # Reset results since delegate
@@ -357,7 +377,6 @@ class FreeSlave:
                 continue
 
             # Check if someone else can handle more packages
-            # TODO: finish this and test that it works!
             uri = CONN_STRING.format(
                 node.ip, node.port, "/api/packages/{}/{}".format(
                     self.ip, self.port
@@ -373,10 +392,9 @@ class FreeSlave:
                 node.update_last_active()
                 data = response.json()
             else:
-                # TODO: What should we do if server answers something else
-                # than 200 OK?
                 logger.debug('something went wong... :(')
                 raise ValueError
+            # Get right amount of unassigned working packages
             remaining_buffer = data["available_buffer"]
             packages = self.get_packages(max_count=remaining_buffer)
 
@@ -390,6 +408,7 @@ class FreeSlave:
                     requests.Timeout) as e:
                 logger.debug("Error while connecting to host: {}".format(e))
                 return False
+            # Packages successfully assigned
             if response.status_code == 204:
                 logger.debug(
                     "Packages assigned successfully "
@@ -408,10 +427,12 @@ class FreeSlave:
                     "Something went wrong when assigning packages "
                     "to remote node {}, releasing packages.".format(node)
                 )
+                # Failed to assign packages, release them
                 for package in packages:
                     package.release()
                 return False
 
+    # Convert list of objects to list of dictionaries
     @staticmethod
     def convert_to_dict(convertable):
         items = []
@@ -419,6 +440,7 @@ class FreeSlave:
             items.append(item.get_dict())
         return items
 
+    # Set node information to given packages
     def set_assigned_to_packages(self, node, packages):
         for package in packages:
             found = False
@@ -432,6 +454,8 @@ class FreeSlave:
                 if found:
                     break
 
+    # Get list of free working packages
+    # Can be used to get the number of free packages or to get list of packages that are then assigned
     def get_packages(self, lock_packages=True, max_count=10):
         packages = []
         for task in self.tasks:
@@ -449,6 +473,7 @@ class FreeSlave:
 
         return packages
 
+    # Validate that request data contains necessary fields and has correct format
     @staticmethod
     def validate_package_get_request(data):
         if type(data) is not dict:
@@ -465,6 +490,7 @@ class FreeSlave:
             return False
         return True
 
+    # Validate that request data contains necessary fields and has correct format
     @staticmethod
     def validate_register_worker_data(data):
         if type(data) is not dict:
@@ -490,8 +516,3 @@ class FreeSlave:
         if type(data['package_id']) is not str:
             return False
         return True
-
-    # TEST METHODS
-    def print_nodes(self):
-        for node in self.nodes:
-            logger.debug(node)

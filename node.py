@@ -33,6 +33,7 @@ class Node:
             'last_active': int(self.last_active)
         }
 
+    # Validate constructor dictionary data
     @staticmethod
     def validate_node_data(data):
         if type(data) is not dict:

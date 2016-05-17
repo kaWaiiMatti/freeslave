@@ -64,6 +64,7 @@ class MD5HashTask(Task):
             return False
         return True
 
+    # Method to get all possible char combinations
     @staticmethod
     def yield_char_combinations(max_length, existing='',
                                 include_not_max_length=False,

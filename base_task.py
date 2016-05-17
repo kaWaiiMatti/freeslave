@@ -5,6 +5,7 @@ from time import time
 logger = logging.getLogger(__name__)
 
 
+# Generic task class
 class Task:
     logging.basicConfig(
         level=logging.DEBUG,
@@ -38,6 +39,8 @@ class Task:
 
         return response
 
+    # Add correct answer to task
+    # if task is set to accept only one answer the rest of the working packages are removed
     def add_result(self, identifier, data):
         for package in self.packages:
             if package.package_id == identifier:
@@ -49,6 +52,7 @@ class Task:
                 return True
         return False
 
+    # Validate constructor dictionary data
     @staticmethod
     def validate_input(data):
         if type(data) is not dict:
@@ -62,6 +66,7 @@ class Task:
         return True
 
 
+# Generic working package class
 class TaskPackage:
     def __init__(self, data):
         try:

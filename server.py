@@ -62,7 +62,6 @@ def main():
                 status=400,
                 body=json.dumps({'error': 'Invalid node information.'})
             )
-
         registering_node = Node(data)
 
         # Create list of received nodes
@@ -108,6 +107,7 @@ def main():
     def node_keep_alive():
         return HTTPResponse(status=200)
 
+    # Get all tasks, used mostly by client
     @app.route('/api/tasks')
     def get_all_tasks():
         tasks = []
@@ -119,6 +119,7 @@ def main():
             body=json.dumps(tasks)
         )
 
+    # Create new task
     @app.route('/api/tasks', method='POST')
     def add_task():
         data = parse_request_payload(request)
@@ -140,6 +141,7 @@ def main():
                          'parameters already exists!'
                 )
 
+    # Get single task information
     @app.route('/api/tasks/<id:int>')
     def get_task(id):
         for task in fs.tasks:
@@ -150,6 +152,7 @@ def main():
                 )
         return HTTPResponse(status=404)
 
+    # Delete task with given id
     @app.route('/api/tasks/<id:int>', method='DELETE')
     def delete_task(id):
         if fs.remove_task(id):
@@ -160,6 +163,7 @@ def main():
             return HTTPResponse(status=204)
         return HTTPResponse(status=404)
 
+    # Get the information how many working packages this node accepts from node with given ip and port
     @app.route('/api/packages/<ip>/<port:int>')
     def accept_packages(ip, port):
         data = {'ip': ip, 'port': port}
@@ -185,6 +189,7 @@ def main():
             )
         )
 
+    # A node assignes working packages to this node
     @app.route('/api/packages', method='POST')
     def add_packages():
         data = parse_request_payload(request)
@@ -225,20 +230,19 @@ def main():
         logger.debug("Max worker amount reached.")
         return HTTPResponse(status=204)
 
-
-    #TODO: does not find all the packages for some reason
+    # Remove working packages from queue with given assigner ip, port and task id
     @app.route('/api/packages/<ip>/<port:int>/<task_id:int>', method='DELETE')
     def remove_working_packages(ip, port, task_id):
         logger.debug('removing packages')
         for package in fs.packages:
             logger.debug('address:{}:{}, task_id:{}'.format(package.assigner_ip, package.assigner_port, package.task_id))
             if package.assigner_ip == ip and package.assigner_port == port and package.task_id == task_id and package.process_id is None:
-                logger.debug('REMOVEE')
                 fs.packages.remove(package)
         return HTTPResponse(
             status=204
         )
 
+    # Post result for working package
     @app.route('/api/packages/result', method='POST')
     def receive_result():
         data = parse_request_payload(request)
@@ -251,7 +255,6 @@ def main():
                 body=json.dumps({'error': 'Type is not defined!'})
             )
 
-        # TODO: make generic validator?
         if data['type'] == 'md5hashpackage':
             if not MD5HashPackage.validate_md5hashpackage_result(data):
                 return HTTPResponse(
@@ -283,7 +286,6 @@ def main():
                         fs.remove_working_packages(task.task_id)
                         fs.write_tasks()
                         return HTTPResponse(status=204)
-                    #TODO: share result to other nodes
                     fs.write_tasks()
                 return HTTPResponse(status=200)
 
@@ -292,6 +294,7 @@ def main():
             body=json.dumps({'error': 'Could not find task with given id!'})
         )
 
+    # New worker registers itself
     @app.route('/api/processes', method='POST')
     def register_worker():
         data = parse_request_payload(request)
@@ -319,6 +322,7 @@ def main():
             )
         )
 
+    # Worker sends still alive message
     @app.route('/api/processes/<process_id:int>', method='POST')
     def worker_keep_alive(process_id):
         for package in fs.packages:
@@ -332,6 +336,7 @@ def main():
             )
         )
 
+    # Worker unregisters
     @app.route('/api/processes/<process_id:int>', method='DELETE')
     def unregister_worker(process_id):
         for package in fs.packages:
@@ -348,17 +353,10 @@ def main():
             )
         )
 
-    @app.route('/api/test', method='POST')
-    def test():
-        logger.debug(bytes.decode(request.body.read()))
-
     # Delegate packages before start
     fs.delegate_packages()
     fs.start_worker()
 
-    # OK, so this should be at the bottom. I feel so dirty having function
-    # definitions inside main() and then having logic both at the top and
-    # bottom...
     run(app, host=config['ip'], port=config['port'])
 
 
