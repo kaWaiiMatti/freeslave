@@ -144,4 +144,11 @@ class TaskPackage:
         self.last_active = None
 
     def is_assigned(self):
-        return self.assigned_ip != None and self.assigned_port != None
+        return self.assigned_ip is not None and self.assigned_port is not None
+
+    def is_active(self, threshold=60):
+        if not self.last_active:
+            return False
+        if time() - self.last_active >= threshold:
+            return False
+        return True

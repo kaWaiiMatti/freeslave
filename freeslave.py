@@ -208,14 +208,12 @@ class FreeSlave:
         return buffer_len
 
     def get_active_worker_count(self):
-        current_time = int(time())
         count = 0
 
         for package in self.packages:
             if package.last_active is None:
                 continue
-            if (current_time - package.last_active) > \
-                    FreeSlave.inactive_process_time_limit:
+            if not package.is_active(FreeSlave.inactive_process_time_limit):
                 package.last_active = None
                 package.process_id = None
             if package.last_active is not None:
@@ -360,10 +358,10 @@ class FreeSlave:
             logger.debug('No tasks to delegate!')
             return False
         # Check that no working packages have gotten stuck
-        time_now = time()
         for task in self.tasks:
             for package in task.packages:
-                if package.is_assigned() and (time_now - package.last_active) > self.release_package_time:
+                if package.is_assigned() and \
+                        not package.is_active(self.release_package_time):
                     package.release()
         # Loop through all the nodes to delegate packages
         for node in self.nodes:
