@@ -46,6 +46,9 @@ class FreeSlave:
         self.results_since_delegate = 0
         self.delegate_packages_threshold = 3
 
+        # release working package after x seconds
+        self.release_package_time = 600
+
         self.load_tasks()
 
     # write tasks to file
@@ -356,6 +359,12 @@ class FreeSlave:
         if len(self.tasks) == 0:
             logger.debug('No tasks to delegate!')
             return False
+        # Check that no working packages have gotten stuck
+        time_now = time()
+        for task in self.tasks:
+            for package in task.packages:
+                if package.is_assigned() and (time_now - package.last_active) > self.release_package_time:
+                    package.release()
         # Loop through all the nodes to delegate packages
         for node in self.nodes:
             # Verify that we have packages that can be delegated.
