@@ -136,7 +136,6 @@ class TaskPackage:
     def assign_to(self, node):
         self.assigned_ip = node.ip
         self.assigned_port = node.port
-        self.update_last_active()
 
     def release(self):
         self.assigned_ip = None
